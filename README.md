@@ -16,9 +16,9 @@ uv venv --python 3.11
 source .venv/bin/activate
 uv sync
 uv pip install -e .
-uv pip install submodules/transformers[torch]
-
+uv pip install submodules/transformers[torch] # Requires transformers nightly for dinov3 ViT
 ```
+
 ## Defining training configs and running training
 To fine-tune a model on your own data, you need to define configs for data processing and training. Example [configs](dp/util/config.py) are provided, starting from standard format lerobot dataset, which you can modify and add interfaces for your own dataset format.
 
