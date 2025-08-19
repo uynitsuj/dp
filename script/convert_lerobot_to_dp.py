@@ -91,7 +91,8 @@ def _ffmpeg_extract_jpgs(video_path: Path, out_dir: Path) -> None:
         "-i", str(video_path),
         "-vsync", "0",
         "-start_number", "0",
-        "-q:v", "2",
+        "-q:v", "1",
+        "-pix_fmt", "yuvj444p",
         str(out_dir / "%06d.jpg"),
     ]
     subprocess.run(cmd, check=True)
