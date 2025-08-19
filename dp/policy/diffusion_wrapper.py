@@ -12,7 +12,8 @@ from transformers import AutoProcessor
 from dp.dataset.utils import default_vision_transform as transforms_noaug_train  # scale to 224 224 first 
 from dp.dataset.utils import unscale_action
 from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
-from dp.util.args import ExperimentConfig
+# from dp.util.args import ExperimentConfig
+from dp.util.config import TrainConfig
 
 # def load_state_dict_flexible(model, state_dict):
 #     """
@@ -90,7 +91,7 @@ class DiffusionWrapper():
             "max" : torch.from_numpy(max_action),
         }
         
-        args : ExperimentConfig = yaml.load(Path(train_yaml_path).read_text(), Loader=yaml.Loader)
+        args : TrainConfig = yaml.load(Path(train_yaml_path).read_text(), Loader=yaml.Loader)
         self.device = device
         if args.model_cfg.policy_type == "diffusion": 
             policy = DiffusionPolicy
