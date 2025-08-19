@@ -333,9 +333,10 @@ class SequenceDataset(Dataset):
         # left_proprio, right_proprio = self.helper_load_proprio(file_path, start, start + 1)
         
         # proprio = np.concatenate([left_proprio, right_proprio], axis=-1) 
-        proprio = torch.from_numpy(proprio)
+        # print("proprio.shape", proprio.shape)
+        proprio = torch.from_numpy(proprio[0])
         # get rid of the time dimension since there's just one step
-        proprio = proprio.squeeze(0)
+        # proprio = proprio.squeeze(0)
 
         # get delta actions  TODO: make data transforms at this stage more extensible
         # if self.use_delta_action:

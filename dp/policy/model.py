@@ -520,8 +520,8 @@ class SimplePolicy(nn.Module):
         return nimage, nagent_pos, batch_size
 
 class DiffusionPolicy(nn.Module):
-    action_dim = 20
-    lowdim_obs_dim = 20
+    action_dim = 29
+    lowdim_obs_dim = 29
     vision_feature_dim = 512
 
     def __init__(
@@ -754,6 +754,8 @@ class DiffusionPolicy(nn.Module):
 
         # concatenate vision feature and low-dim obs
         if not self.only_vision:
+            # print("image_features.shape", image_features.shape)
+            # print("nagent_pos.shape", nagent_pos.shape)
             obs_features = torch.cat([image_features, nagent_pos], dim=-1)
         else:
             obs_features = image_features
