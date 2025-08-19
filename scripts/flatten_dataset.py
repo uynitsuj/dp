@@ -1,5 +1,5 @@
-import h5py 
 import numpy as np
+
 data_path = "/home/mfu/icrl_data/simple_test/r2d2.hdf5"
 
 def get_all_entries(h5, key):

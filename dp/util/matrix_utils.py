@@ -1,6 +1,6 @@
 import numpy as onp
-from typing import Tuple
 from scipy.spatial.transform import Rotation
+
 
 def gram_schmidt(vectors : onp.ndarray) -> onp.ndarray: 
     """
@@ -87,7 +87,7 @@ def convert_abs_action(action, proprio):
         desired_mat = onp.concatenate([trans, rot, action[:,:,-2:]], axis=-1)
     return desired_mat
 
-def rot_6d_to_euler(rot_6d : onp.ndarray, format="XYZ"):
+def rot_6d_to_euler(rot_6d : onp.ndarray, format: str = "XYZ") -> onp.ndarray:
     """
     Convert 6d representation to euler angles
     rot_6d: N, 6

@@ -1,14 +1,15 @@
 import math
 import sys
-from typing import Iterable, Union, Any
+from typing import Iterable, Union
 
 import torch
-import torch.nn as nn
-from . import misc
 
 # from dp.util.args import ExperimentConfig
 import dp.util.config as _config
-from dp.policy.model import SimplePolicy, DiffusionPolicy
+from dp.policy.model import DiffusionPolicy, SimplePolicy
+
+from . import misc
+
 
 def train_one_epoch(model: Union[SimplePolicy, DiffusionPolicy], data_loader: Iterable, 
                     optimizer: torch.optim.Optimizer, lr_scheduler : torch.optim.lr_scheduler,

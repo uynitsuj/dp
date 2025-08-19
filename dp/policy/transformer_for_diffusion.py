@@ -1,9 +1,10 @@
 # from https://github.com/real-stanford/diffusion_policy/blob/main/diffusion_policy/policy/diffusion_transformer_lowdim_policy.py
-from typing import Union, Optional, Tuple
 import logging
 import math
+from typing import Optional, Tuple, Union
+
 import torch
-import torch.nn as nn
+from torch import nn
 
 logger = logging.getLogger(__name__)
     

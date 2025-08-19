@@ -1,5 +1,4 @@
 import h5py 
-import mediapy
 from glob import glob
 import os
 from tqdm import tqdm

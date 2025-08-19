@@ -1,7 +1,6 @@
 import torch
 from dp_gs.policy.action_head import DiscreteActionDecoder
-from dp_gs.util.args import ActionDecoderConfig, ExperimentConfig
-from dataclasses import dataclass
+from dp_gs.util.args import ActionDecoderConfig
 import tyro 
 
 def test_discrete_action_decoder(decoder_config : ActionDecoderConfig):

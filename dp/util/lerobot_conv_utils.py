@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-import os
 import json
-from pathlib import Path
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
+import shutil
+import subprocess
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import h5py
 import numpy as np
-from PIL import Image
-from tqdm import tqdm
-import tyro
-
-import subprocess
 import pandas as pd
+import tyro
+from datasets.features import features
 
 # LeRobot
 from lerobot.datasets.lerobot_dataset import HF_LEROBOT_HOME, LeRobotDataset, LeRobotDatasetMetadata
+from PIL import Image
+from tqdm import tqdm
+
 
 def _discover_keys_from_meta(meta: LeRobotDatasetMetadata,
                              fallback_proprio: str = "joint_position",
@@ -236,15 +236,13 @@ def _episode_worker(repo_id: str,
     }
 
 
-def convert_dataset_parallel(repo_id: str, output_dir: str = None, num_workers: int = 10) -> None:
+def convert_dataset_parallel(repo_id: str, output_dir: str | None = None, num_workers: int = 10) -> str:
     """
     Parallel, per-episode export to HDF5 + JPEGs.
     """
     # Probe once in the parent to list episodes & get fallback keys.
     # Monkey-patch to fix 'List' feature type error in old datasets
     try:
-        import datasets.features.features as features
-
         _OLD_GENERATE_FROM_DICT = features.generate_from_dict
 
         def _new_generate_from_dict(obj):
@@ -263,20 +261,19 @@ def convert_dataset_parallel(repo_id: str, output_dir: str = None, num_workers: 
     # Determine which episodes to export.
     if probe.episodes is not None:
         ep_indices = list(probe.episodes)
+    # Prefer metadata count; fall back to scanning hf_dataset if needed.
+    elif hasattr(probe, "meta") and hasattr(probe.meta, "total_episodes"):
+        ep_indices = list(range(probe.meta.total_episodes))
     else:
-        # Prefer metadata count; fall back to scanning hf_dataset if needed.
-        if hasattr(probe, "meta") and hasattr(probe.meta, "total_episodes"):
-            ep_indices = list(range(probe.meta.total_episodes))
-        else:
-            # As a last resort, derive episode ids from hf_dataset column
-            epi_col = [int(x.item()) for x in probe.hf_dataset["episode_index"]]
-            seen = []
-            last = None
-            for e in epi_col:
-                if e != last:
-                    seen.append(e)
-                    last = e
-            ep_indices = seen
+        # As a last resort, derive episode ids from hf_dataset column
+        epi_col = [int(x.item()) for x in probe.hf_dataset["episode_index"]]
+        seen = []
+        last = None
+        for e in epi_col:
+            if e != last:
+                seen.append(e)
+                last = e
+        ep_indices = seen
 
     if output_dir is None:
         output_dir = HF_LEROBOT_HOME / repo_id / "dp_dataset"
@@ -336,7 +333,6 @@ def main(args: Args):
     out_dir = Path(args.output_dir) / args.repo_id
     if out_dir.exists() and args.overwrite:
         print(f"Overwriting {out_dir}")
-        import shutil
         shutil.rmtree(out_dir)
     convert_dataset_parallel(args.repo_id, out_dir, args.num_workers)
 

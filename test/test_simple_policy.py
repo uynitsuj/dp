@@ -2,7 +2,6 @@ import torch
 import tyro
 from tqdm import trange
 import time
-import numpy as np
 from dp_gs.policy.model import SimplePolicy
 from dp_gs.util.args import ExperimentConfig
 

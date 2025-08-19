@@ -1,18 +1,29 @@
-import os 
 import json
-import h5py
-import torch
-import numpy as np
-import torchvision.transforms as transforms
-from typing import Union, Optional
-from .utils import euler_to_rot_6d, quat_to_rot_6d, euler_to_quat, load_json, convert_multi_step, convert_delta_action, find_increasing_subsequences, create_prompt_mask, scale_action
-from dp_gs.util.args import DatasetConfig, SharedConfig
-from collections import defaultdict
-import nvidia.dali as dali
-import nvidia.dali.fn as fn
-import nvidia.dali.types as types
-import nvidia.dali.backend as backend
+import os
 import random
+from collections import defaultdict
+from typing import Optional, Union
+
+import h5py
+import numpy as np
+import torch
+from dp_gs.util.args import DatasetConfig, SharedConfig
+from nvidia import dali
+from nvidia.dali import backend, fn, types
+from torchvision import transforms
+
+from .utils import (
+    convert_delta_action,
+    convert_multi_step,
+    create_prompt_mask,
+    euler_to_quat,
+    euler_to_rot_6d,
+    find_increasing_subsequences,
+    load_json,
+    quat_to_rot_6d,
+    scale_action,
+)
+
 
 class SequenceDataset(torch.utils.data.Dataset):
     
@@ -69,7 +80,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         # keys to f: mapping from hdf5 keys to hdf5 files
         self.keys_to_file_name = {}
-        for f, keys in zip(hdf5_files, self.hdf5_keys):
+        for f, keys in zip(hdf5_files, self.hdf5_keys, strict=False):
             for k in keys:
                 self.keys_to_file_name[k] = f.filename
 
@@ -142,11 +153,10 @@ class SequenceDataset(torch.utils.data.Dataset):
         if split_file is not None:
             with open(split_file, 'r') as f:
                 self.hdf5_keys = json.load(f)
+        elif self.split == "train": 
+            self.hdf5_keys = self.hdf5_keys[:num_train]
         else:
-            if self.split == "train": 
-                self.hdf5_keys = self.hdf5_keys[:num_train]
-            else:
-                self.hdf5_keys = self.hdf5_keys[num_train:]
+            self.hdf5_keys = self.hdf5_keys[num_train:]
 
         # if sort by lang, we first shuffle the task permutation and then the episodes 
         # this ensures that for most indices, there's no overlap between tasks
@@ -398,7 +408,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
             repeats = rng.choice(np.arange(self.num_repeat_traj), size=len(self.verb_to_episode[v]), replace=True) + 1
             episode_keys = [self.verb_to_episode[v][i] for i in indices]
-            task_length = sum([self.epi_len_mapping_json[key] * r for key, r in zip(episode_keys, repeats)])
+            task_length = sum([self.epi_len_mapping_json[key] * r for key, r in zip(episode_keys, repeats, strict=False)])
             if task_length < self.seq_length:
                 continue
 
@@ -409,13 +419,13 @@ class SequenceDataset(torch.utils.data.Dataset):
 
             # calculate the ranges of trajectories in index space 
             start_idx = 0
-            for key, num_repeat in zip(episode_keys, repeats):
+            for key, num_repeat in zip(episode_keys, repeats, strict=False):
                 trajectory_length = self.epi_len_mapping_json[key]
                 for repeat_i in range(num_repeat):
                     ranges.append((start_idx, start_idx + trajectory_length)) # (inclusive, exclusive)
                     start_idx += trajectory_length
 
-            for key, num_repeat in zip(episode_keys, repeats):
+            for key, num_repeat in zip(episode_keys, repeats, strict=False):
                 for repeat_i in range(num_repeat):
                     for s in range(self.epi_len_mapping_json[key]):
                         cache.append(
@@ -647,13 +657,12 @@ class SequenceDataset(torch.utils.data.Dataset):
                 rot = euler_to_rot_6d(rot)
             ret = np.concatenate([ret[:, :3], rot], axis=-1)
             proprio[self.proprio_keys[0]] = ret
-        else:
-            if rot.shape[1] == 3:
-                # convert to quaternion (only happens for droid, which uses XYZ as the rotation format)
-                rot = euler_to_quat(rot)
-                # update the proprio
-                ret = np.concatenate([ret[:, :3], rot], axis=-1)
-                proprio[self.proprio_keys[0]] = ret
+        elif rot.shape[1] == 3:
+            # convert to quaternion (only happens for droid, which uses XYZ as the rotation format)
+            rot = euler_to_quat(rot)
+            # update the proprio
+            ret = np.concatenate([ret[:, :3], rot], axis=-1)
+            proprio[self.proprio_keys[0]] = ret
         proprio_vec = np.concatenate([proprio[k] for k in self.proprio_keys], axis=-1)
         proprio_vec = torch.from_numpy(proprio_vec).float()
         return proprio_vec

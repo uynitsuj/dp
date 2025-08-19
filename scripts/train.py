@@ -1,34 +1,28 @@
 #  CUDA_VISIBLE_DEVICES=4,5,6,7 --main_process_port=12547 accelerate launch script/train.py --dataset-cfg.dataset-root /home/mfu/dataset/dp/transfer_tiger_241204 --logging-cfg.log-name 241211_1403 --logging-cfg.output-dir /shared/projects/icrl/dp_outputs --shared-cfg.no-use-delta-action --shared-cfg.seq-length 4 --shared-cfg.num-pred-steps 16 --dataset-cfg.subsample-steps 4 --trainer-cfg.epochs 300
 # from dp.dataset.dataset import SequenceDataset
 # from timm.data.loader import MultiEpochsDataLoader
-import numpy as np
-import os 
-import torch
-import torch.backends.cudnn as cudnn
-import tyro
-import wandb
-import yaml
 import json
-import dp.util.misc as misc
-from typing import Optional
+import os
+from dataclasses import replace
 
+import numpy as np
+import torch
 from diffusers.optimization import get_scheduler
+from torch.backends import cudnn
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 from transformers import AutoProcessor
-from dp.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
-from dp.dataset.image_dataset_v2 import SequenceDataset, VideoSampler, CollateFunction
-from dp.dataset.utils import default_vision_transform, aug_vision_transform
-from dp.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
+
 # from dp.util.args import ExperimentConfig
 import dp.util.config as _config
+import wandb
+from dp.dataset.image_dataset_v2 import CollateFunction, SequenceDataset, VideoSampler
+from dp.dataset.utils import aug_vision_transform, default_vision_transform
+from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
+from dp.util import misc
 from dp.util.args import DatasetConfig
-from dataclasses import replace
-from dp.util.misc import NativeScalerWithGradNormCount as NativeScaler
-from dp.util.engine import train_one_epoch
 from dp.util.ema import ModelEMA
-
-from pathlib import Path
-from torch.utils.data import DataLoader 
-from torch.utils.tensorboard import SummaryWriter
+from dp.util.engine import train_one_epoch
 from dp.util.misc import MultiEpochsDataLoader
 from tqdm import tqdm
 import time
@@ -125,7 +119,7 @@ def main(args : _config.TrainConfig):
     # else:
     dataset_type = SequenceDataset
 
-    if type(args.dataset_cfg) == DatasetConfig and args.dataset_cfg.dataset_root is None:
+    if type(args.dataset_cfg) is DatasetConfig and args.dataset_cfg.dataset_root is None:
         raise ValueError("Dataset root directory is not set")
     else:
         args = replace(args, dataset_cfg=args.dataset_cfg.create())

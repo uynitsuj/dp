@@ -1,20 +1,18 @@
-from collections.abc import Callable, Mapping, Sequence
 import dataclasses
-import re
-from copy import deepcopy
-from typing import Protocol, TypeAlias, TypeVar, runtime_checkable
+from collections.abc import Sequence
+from typing import Protocol, runtime_checkable
 
 # import flax.traverse_util as traverse_util
 # import jax
 import numpy as np
 import torch
-# from openpi_client import image_tools
+import viser.transforms as vtf
 
+# from openpi_client import image_tools
 # from openpi.models import tokenizer as _tokenizer
 # from openpi.shared import array_typing as at
 # from openpi.shared import normalize as _normalize
-from dp.util.matrix_utils import rot_6d_to_quat, quat_to_rot_6d
-import viser.transforms as vtf
+from dp.util.matrix_utils import quat_to_rot_6d, rot_6d_to_quat
 
 # DataDict: TypeAlias = at.PyTree
 # NormStats: TypeAlias = _normalize.NormStats

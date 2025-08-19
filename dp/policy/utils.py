@@ -1,7 +1,9 @@
-import torch 
-import torch.nn as nn
 import math
 from typing import Union
+
+import torch
+from torch import nn
+
 
 class SinusoidalPosEmb(nn.Module):
     def __init__(self, dim):
@@ -136,7 +138,7 @@ class ConditionalUnet1D(nn.Module):
         )
         cond_dim = dsed + global_cond_dim
 
-        in_out = list(zip(all_dims[:-1], all_dims[1:]))
+        in_out = list(zip(all_dims[:-1], all_dims[1:], strict=False))
         mid_dim = all_dims[-1]
         self.mid_modules = nn.ModuleList([
             ConditionalResidualBlock1D(
@@ -231,12 +233,13 @@ class ConditionalUnet1D(nn.Module):
         for mid_module in self.mid_modules:
             x = mid_module(x, global_feature)
 
-        for idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
+        for _idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
             hp = h.pop()
             try:
                 x = torch.cat((x, hp), dim=1)
             except:
-                import pdb; pdb.set_trace()
+                import pdb
+                pdb.set_trace()
                 x = torch.cat((x, hp), dim=1)
 
             x = resnet(x, global_feature)

@@ -1,12 +1,15 @@
 import abc
-from typing import Dict, Union, Optional, Literal 
+from typing import Dict, Union
+
 import torch
-import torch.nn as nn
 import torch.distributions as D
-from timm.layers import Mlp
+from torch import nn
 from torch.nn import functional as F
+
 from dp.util.args import ActionDecoderConfig
-from .transformer import TransformerBlock, CrossAttentionBlock
+
+from .transformer import CrossAttentionBlock
+
 
 class PredHead(abc.ABC, nn.Module):
     """

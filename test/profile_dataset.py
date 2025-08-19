@@ -2,20 +2,15 @@
 python test/profile_dataset.py --dataset-cfg.dataset-root /home/mfu/dataset/dp_gs/transfer_tiger_241204 --shared-cfg.seq-length 4 --shared-cfg.num-pred-steps 16 --dataset-cfg.subsample-steps 4
 """
 import os
-import timm
 import torch
 import tyro 
 import tqdm
 import time
-import mediapy as media
-import matplotlib.pyplot as plt
 import numpy as np 
-import cProfile
 from torch.utils.data import DataLoader 
 
 from dp_gs.dataset.dataset import SequenceDataset
 from dp_gs.util.args import ExperimentConfig
-import timm 
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dp_gs.dataset.utils import default_vision_transform
 

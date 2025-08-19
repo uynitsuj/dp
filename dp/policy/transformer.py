@@ -1,9 +1,11 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import math
 from typing import Optional, Tuple
+
+import torch
+import torch.nn.functional as F
+from torch import nn
+
 from dp.util.args import ActionDecoderConfig
+
 
 class RotaryPositionalEmbedding(nn.Module):
     def __init__(self, dim: int, max_seq_len: int):

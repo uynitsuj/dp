@@ -10,10 +10,9 @@ import mediapy as media
 import matplotlib.pyplot as plt
 import numpy as np 
 
-from dp_gs.dataset.image_dataset import SequenceDataset, VideoSampler, CollateFunction
+from dp_gs.dataset.image_dataset import VideoSampler, CollateFunction
 from dp_gs.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
 from dp_gs.util.args import ExperimentConfig
-import timm 
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dp_gs.dataset.utils import default_vision_transform
 from timm.data.loader import MultiEpochsDataLoader
