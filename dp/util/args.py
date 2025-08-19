@@ -50,18 +50,11 @@ class DatasetConfig:
             outputs=[_transforms.Bimanual_InterGripperProprio_AbsoluteActions(delta_action_mask, action_dim=20 if "20D" in retarget_mode else 29)],
         )
         
-    
-    #subsample_data
+    # subsample_data [0.0, 1.0]
     data_subsample_ratio : float = -1
 
-    # subsample trajectories 
+    # subsample number of  trajectories 
     data_subsample_num_traj : int = -1
-
-    # balance data that only uses left or right 
-    balance_data : bool = False
-
-    # is sim data
-    is_sim_data : bool = False
 
     # scale action by statistics 
     scale_action : bool = True
@@ -75,50 +68,8 @@ class DatasetConfig:
     # train split 
     train_split : float = 0.95
 
-    # Order the data episodes by language descriptions
-    sort_by_lang : bool = False
-
-    # Enforce only one task is being seen in a batch
-    task_barrier : bool = False 
-
-    # each step is only seen once in each episode 
-    skip_step : bool = False
-
-    # variance of the noise added to proprioception
-    proprio_noise : float = 0.0
-
-    # variance of the noise added to action 
-    action_noise : float = 0.0
-
-    # training on one or more specific tasks
-    task_names : Optional[Tuple[str, ...]] = None
-
-    # add vision data aug 
+    # add vision data augmentation
     vision_aug : bool = True
-    
-    # rebalance tasks 
-    rebalance_tasks : bool = False
-
-    # each batch contains data that is non overlapping (i.e. for each epoch the same state action does not appear twice)
-    non_overlapping : Union[bool, int] = False
-
-    # enable repeats of trajectory 
-    num_repeat_traj : int = 1
-
-    # shuffle repeat trajectory 
-    shuffle_repeat_traj : bool = False
-        
-    #number of steps to weight
-    num_weighted_steps : float = 30
-
-    # use goal condition 
-    goal_conditioned : bool = False
-
-    # use a fraction of the dataset by task (0.0 to 1.0)
-    dataset_fraction : float = 1.0
-
-    # negative prompting 
-    neg_prompt : bool = False 
 
     # subsample steps 
     subsample_steps : int = 1
@@ -350,7 +301,7 @@ class OptimizerConfig:
 @dataclasses.dataclass
 class TrainerConfig:
     # number of epochs 
-    epochs : int = 100
+    epochs : int = 300
 
     # Accumulate gradient iterations (for increasing the effective batch size under memory constraints)
     accum_iter : int = 1
@@ -359,8 +310,8 @@ class TrainerConfig:
     pin_memory : bool = True
 
     # number of workers for dataloader 
-    # num_workers : int = 20 
-    num_workers : int = 0
+    num_workers : int = 20 
+    # num_workers : int = 0
 
     # number of augmentation workers for DALI
     num_augmentation_workers : int = 20

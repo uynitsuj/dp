@@ -182,9 +182,6 @@ class SequenceDataset(Dataset):
         assert os.path.exists(self.dataset_root), f"Dataset root {self.dataset_root} does not exist"
         self.vision_transform = vision_transform
         self.data_transforms = dataset_config.data_transforms
-        
-        self.use_delta_action = shared_config.use_delta_action
-        self.proprio_noise = dataset_config.proprio_noise
 
         # calculate length of dataset 
         common_path = glob("**/episode.h5", root_dir=self.dataset_root, recursive=True)
@@ -194,6 +191,7 @@ class SequenceDataset(Dataset):
             self.common_path = self.common_path[:int(dataset_config.data_subsample_num_traj / dataset_config.train_split)]
         elif dataset_config.data_subsample_ratio > 0:
             self.common_path = self.common_path[:int(dataset_config.data_subsample_ratio * len(self.common_path) / dataset_config.train_split)]
+        assert not (dataset_config.data_subsample_num_traj > 0 and dataset_config.data_subsample_ratio > 0), "Both data_subsample_num_traj and data_subsample_ratio are set, please only set one"
         print("Number of selected trajectories: ", len(self.common_path))
         
         self.file2length = {}
@@ -249,7 +247,7 @@ class SequenceDataset(Dataset):
 
         # vision augmentation
         if dataset_config.vision_aug:
-            self.vision_aug = True
+            self.vision_aug = True # TODO find out if this is being used externally, since it's not used in the class
             self.contrast_range = [0.8, 1.2]
             self.brightness_range = [-0.1, 0.1]
             print("using numeric brightness and contrast augmentation")
@@ -386,17 +384,6 @@ class SequenceDataset(Dataset):
         actions = episode_data["action"][indices]
         proprio = episode_data["proprio"][indices]
         return actions, proprio
-
-    def randomize(self, transform : np.ndarray):
-        # randomize the transform (N, 7) -> (N, 7)
-        # each transform is wxyz, xyz
-        t, rot = transform[:, 4:7], transform[:, :4]
-        t += np.random.uniform(-self.proprio_noise, self.proprio_noise, t.shape)
-        rot = quat_to_euler(rot)
-        rot += np.random.uniform(-self.proprio_noise, self.proprio_noise, rot.shape)
-        rot = euler_to_quat(rot)
-        rt = np.concatenate([rot, t], axis=1)
-        return rt
 
     # @line_profiler.profile
     def helper_load_camera(self, camera_keys : List[str], file_path : str, start : int, end : int):
