@@ -5,16 +5,12 @@ import numpy as np
 import os 
 import torch
 import torch.backends.cudnn as cudnn
-import tyro
 import wandb
-import yaml
 import json
 import dp.util.misc as misc
-from typing import Optional
 
 from diffusers.optimization import get_scheduler
 from transformers import AutoProcessor
-from dp.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
 from dp.dataset.image_dataset_v2 import SequenceDataset, VideoSampler, CollateFunction
 from dp.dataset.utils import default_vision_transform, aug_vision_transform
 from dp.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
@@ -26,12 +22,9 @@ from dp.util.misc import NativeScalerWithGradNormCount as NativeScaler
 from dp.util.engine import train_one_epoch
 from dp.util.ema import ModelEMA
 
-from pathlib import Path
-from torch.utils.data import DataLoader 
 from torch.utils.tensorboard import SummaryWriter
 from dp.util.misc import MultiEpochsDataLoader
 from tqdm import tqdm
-import time
 
 def main(args : _config.TrainConfig):
     # spawn is needed to initialize vision augmentation within pytorch workers

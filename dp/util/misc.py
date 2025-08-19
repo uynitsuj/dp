@@ -24,7 +24,7 @@ import torch.distributed as dist
 from torch import inf
 import numpy as np
 # from dp.util.args import ExperimentConfig
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
 def load_state_dict_flexible(model, state_dict, return_msg=False):
     """

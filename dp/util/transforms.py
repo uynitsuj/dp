@@ -1,8 +1,6 @@
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Sequence
 import dataclasses
-import re
-from copy import deepcopy
-from typing import Protocol, TypeAlias, TypeVar, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 # import flax.traverse_util as traverse_util
 # import jax

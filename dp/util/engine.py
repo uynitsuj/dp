@@ -1,9 +1,8 @@
 import math
 import sys
-from typing import Iterable, Union, Any
+from typing import Iterable, Union
 
 import torch
-import torch.nn as nn
 from . import misc
 
 # from dp.util.args import ExperimentConfig

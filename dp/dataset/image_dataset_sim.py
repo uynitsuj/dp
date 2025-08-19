@@ -12,12 +12,8 @@ from tqdm import tqdm
 import zarr 
 # import line_profiler
 from PIL import Image
-import imageio.v3 as iio
-from tqdm import tqdm 
 
-from torch.utils.data import Sampler, Dataset
-from typing import List, Iterator
-from pathlib import Path
+from torch.utils.data import Dataset
 from itertools import chain
 #set up random seed
 import random

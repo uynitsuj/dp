@@ -4,7 +4,6 @@ import numpy as np
 import os 
 import torch 
 import torchvision.transforms as transforms
-import zarr 
 
 from glob import glob
 from PIL import Image
@@ -14,7 +13,7 @@ from typing import List, Iterator, Optional
 from transformers import AutoProcessor
 
 from dp.util.args import DatasetConfig, SharedConfig, LoggingConfig
-from .utils import quat_to_rot_6d, quat_to_euler, euler_to_quat, convert_multi_step_np, convert_delta_action, scale_action
+from .utils import convert_multi_step_np, scale_action
 import h5py
 
 class CollateFunction:

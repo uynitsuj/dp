@@ -18,29 +18,29 @@ def init_hdf5_file(file, epi_idx, max_epi_len, resolution : tuple):
     epi_name = f'real_episode_{epi_idx}'
     gp = file.create_group(epi_name)
     
-    obs_gp = gp.create_group(f'observation')
-    act_gp = gp.create_group(f'action')
+    obs_gp = gp.create_group('observation')
+    act_gp = gp.create_group('action')
     
-    obs_gp.create_dataset(f'cartesian_position',(max_epi_len,6))
-    obs_gp.create_dataset(f'gripper_position',(max_epi_len,1))
-    obs_gp.create_dataset(f'joint_position',(max_epi_len,7))
-    obs_gp.create_dataset(f'exterior_image_1_left',(max_epi_len),dtype=f'S{resolution_bytes}')#, compression="gzip")
-    obs_gp.create_dataset(f'exterior_image_2_left',(max_epi_len),dtype=f'S{resolution_bytes}')#, compression="gzip")
-    obs_gp.create_dataset(f'wrist_image_left',(max_epi_len),dtype=f'S{resolution_bytes}')#, compression="gzip")
+    obs_gp.create_dataset('cartesian_position',(max_epi_len,6))
+    obs_gp.create_dataset('gripper_position',(max_epi_len,1))
+    obs_gp.create_dataset('joint_position',(max_epi_len,7))
+    obs_gp.create_dataset('exterior_image_1_left',(max_epi_len),dtype=f'S{resolution_bytes}')#, compression="gzip")
+    obs_gp.create_dataset('exterior_image_2_left',(max_epi_len),dtype=f'S{resolution_bytes}')#, compression="gzip")
+    obs_gp.create_dataset('wrist_image_left',(max_epi_len),dtype=f'S{resolution_bytes}')#, compression="gzip")
     
-    act_gp.create_dataset(f'cartesian_position',(max_epi_len,6))
-    act_gp.create_dataset(f'gripper_position',(max_epi_len,1))
-    act_gp.create_dataset(f'joint_position',(max_epi_len,7))
-    act_gp.create_dataset(f'cartesian_velocity',(max_epi_len,6))
-    act_gp.create_dataset(f'gripper_velocity',(max_epi_len,1))
-    act_gp.create_dataset(f'joint_velocity',(max_epi_len,7))
+    act_gp.create_dataset('cartesian_position',(max_epi_len,6))
+    act_gp.create_dataset('gripper_position',(max_epi_len,1))
+    act_gp.create_dataset('joint_position',(max_epi_len,7))
+    act_gp.create_dataset('cartesian_velocity',(max_epi_len,6))
+    act_gp.create_dataset('gripper_velocity',(max_epi_len,1))
+    act_gp.create_dataset('joint_velocity',(max_epi_len,7))
     
-    gp.create_dataset(f'language_instruction',(1,),dtype='S200') # needs to decode when read, maximum 500 characters
-    gp.create_dataset(f'language_instruction_2',(1,),dtype='S200') # needs to decode when read, maximum 500 characters
-    gp.create_dataset(f'language_instruction_3',(1,),dtype='S200') # needs to decode when read, maximum 500 characters
-    gp.create_dataset(f'language_embedding',(1,512))
-    gp.create_dataset(f'language_embedding_2',(1,512))
-    gp.create_dataset(f'language_embedding_3',(1,512))
+    gp.create_dataset('language_instruction',(1,),dtype='S200') # needs to decode when read, maximum 500 characters
+    gp.create_dataset('language_instruction_2',(1,),dtype='S200') # needs to decode when read, maximum 500 characters
+    gp.create_dataset('language_instruction_3',(1,),dtype='S200') # needs to decode when read, maximum 500 characters
+    gp.create_dataset('language_embedding',(1,512))
+    gp.create_dataset('language_embedding_2',(1,512))
+    gp.create_dataset('language_embedding_3',(1,512))
     
     other_keys = ['is_first', 'is_last', 'is_terminal', 'reward', 'discount']
     for key in other_keys:
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     language_instructions = set()
     language_json_path = os.path.join(args.out_dir, "language_instructions.json")
 
-    h5_file = h5py.File(args.out_dir+f'/data.hdf5', 'w')
+    h5_file = h5py.File(args.out_dir+'/data.hdf5', 'w')
 
     hdf5_keys = []
     epi_len_mapping_json = {}
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     if args.visualize:
         # visualize the dataset 
-        with h5py.File(args.out_dir+f'/r2d2.hdf5', 'r') as f:
+        with h5py.File(args.out_dir+'/r2d2.hdf5', 'r') as f:
             # visualize the observations 
             for epi_idx in f.keys():
                 print(f"Episode {epi_idx}")

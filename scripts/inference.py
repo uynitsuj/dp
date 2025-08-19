@@ -1,14 +1,12 @@
 # CUDA_VISIBLE_DEVICES=0 python script/inference.py --model_ckpt_folder /shared/projects/icrl/dp_outputs/250208_1027 --ckpt_id 50
 import torch
 from timm.data.loader import MultiEpochsDataLoader
-from dp.policy.model import DiffusionPolicy
 from dp.util.args import InferenceConfig, ExperimentConfig
 # from dp.dataset.dataset import SequenceDataset
 import tyro
 from dp.dataset.utils import default_vision_transform as transforms_noaug_train
 from pathlib import Path
 import yaml
-from diffusers.schedulers.scheduling_ddim import DDIMScheduler
 import matplotlib.pyplot as plt
 import os
 import json
@@ -16,11 +14,9 @@ from dp.dataset.utils import unscale_action
 import numpy as np
 from dp.policy.diffusion_wrapper import DiffusionWrapper
 from dp.dataset.image_dataset_v2 import SequenceDataset, VideoSampler, CollateFunction
-from dp.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
 from dp.policy.model import Dinov2DiscretePolicy
 from transformers import AutoProcessor
 import math
-import json
 from typing import Optional, List, Dict, Tuple
 
 def _load_action_stats(stats_path: Optional[str]) -> Optional[Dict]:

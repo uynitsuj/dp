@@ -1,5 +1,5 @@
 import torch 
-from typing import Union, List, Tuple, Literal
+from typing import List, Tuple, Literal
 import json 
 import numpy as np
 import torchvision

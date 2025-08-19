@@ -2,7 +2,6 @@
 python test/test_dataset.py --dataset-cfg.dataset-root /home/mfu/dataset/dp_gs 
 """
 import os
-import timm
 import torch
 import tyro 
 import tqdm
@@ -13,7 +12,6 @@ import numpy as np
 
 from dp_gs.dataset.dataset import SequenceDataset
 from dp_gs.util.args import ExperimentConfig
-import timm 
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dp_gs.dataset.utils import default_vision_transform
 

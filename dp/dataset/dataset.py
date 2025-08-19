@@ -11,7 +11,6 @@ from tqdm import tqdm
 import zarr 
 # import line_profiler
 import imageio.v3 as iio
-from tqdm import tqdm 
 
 class SequenceDataset(torch.utils.data.Dataset):
     action_key : str = "action/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z

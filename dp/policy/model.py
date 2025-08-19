@@ -9,9 +9,7 @@ import torch.nn.functional as F
 from dp.util.args import ModelConfig, SharedConfig
 from s2wrapper import forward as multiscale_forward
 import timm
-import torch.nn.functional as F
 from dp.policy.action_head import DiscreteActionDecoder
-from dp.util.args import ActionDecoderConfig
 from peft import LoraConfig, get_peft_model
 from dp.policy.transformer_for_diffusion import TransformerForDiffusion
 

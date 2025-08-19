@@ -38,6 +38,7 @@ dependencies=[
     "pandas",
     "datasets==3.6.0",
     "torch==2.8.0",
+    "ruff",
 ]
 
 requires-python= ">=3.10"

@@ -7,7 +7,7 @@ from typing_extensions import override
 
 import tyro
 
-from dp.util.args import SharedConfig, DatasetConfig, TrainerConfig, LoggingConfig, PolicyConfig, VisionEncoderConfig, PreferenceLearningConfig, ModelConfig, OptimizerConfig
+from dp.util.args import SharedConfig, DatasetConfig, TrainerConfig, LoggingConfig, ModelConfig, OptimizerConfig
 from dp.util import transforms as _transforms
 from dp.util.lerobot_conv_utils import convert_dataset_parallel
 

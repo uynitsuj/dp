@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import json
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
@@ -17,7 +16,7 @@ import subprocess
 import pandas as pd
 
 # LeRobot
-from lerobot.datasets.lerobot_dataset import HF_LEROBOT_HOME, LeRobotDataset, LeRobotDatasetMetadata
+from lerobot.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatasetMetadata
 
 def _discover_keys_from_meta(meta: LeRobotDatasetMetadata,
                              fallback_proprio: str = "joint_position",

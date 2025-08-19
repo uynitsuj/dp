@@ -16,9 +16,7 @@ import os
 import glob
 import cv2
 import tyro
-import numpy as np
 from dataclasses import dataclass
-from typing import Optional
 from tqdm import tqdm
 
 

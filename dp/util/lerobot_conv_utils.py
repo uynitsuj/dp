@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import os
 import json
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import time
 
 import h5py
 import numpy as np

@@ -12,7 +12,6 @@ import numpy as np
 # from dp_gs.util.args import ExperimentConfig
 # import timm 
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from timm.data.transforms_factory import transforms_noaug_train
 
 def undo_vision_transform(obs : torch.Tensor, mean : tuple = IMAGENET_DEFAULT_MEAN, std : tuple = IMAGENET_DEFAULT_STD):
     """

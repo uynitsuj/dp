@@ -1,5 +1,4 @@
 import numpy as onp
-from typing import Tuple
 from scipy.spatial.transform import Rotation
 
 def gram_schmidt(vectors : onp.ndarray) -> onp.ndarray: 
