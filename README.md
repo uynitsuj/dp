@@ -9,7 +9,7 @@ git clone --recurse-submodules https://github.com/uynitsuj/dp.git
 # Or if already cloned without --recurse-submodules, run:
 git submodule update --init --recursive
 ```
-Install the main package and I2RT repo for CAN driver interface using uv:
+Install dependencies and main package using uv:
 ```bash
 cd dp
 curl -LsSf https://astral.sh/uv/install.sh | sh
