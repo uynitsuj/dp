@@ -31,7 +31,7 @@ dependencies=[
     "shapely",
     "nvidia-dali-cuda120",
     "av",
-    #"transformers==4.48.2", 
+    "transformers@git+https://github.com/huggingface/transformers.git", 
     "s2wrapper@git+https://github.com/bfshi/scaling_on_scales.git", 
     "peft",
     "viser",
