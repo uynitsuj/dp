@@ -1,11 +1,11 @@
 import torch
 from timm.data.loader import MultiEpochsDataLoader
-from dp_gs.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
-from dp_gs.util.args import InferenceConfig
-from dp_gs.dataset.dataset import SequenceDataset
+from dp.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
+from dp.util.args import InferenceConfig
+from dp.dataset.dataset import SequenceDataset
 import tyro
 # from timm.data.transforms_factory import transforms_noaug_train
-from dp_gs.dataset.utils import default_vision_transform as transforms_noaug_train # scale to 224 224 first 
+from dp.dataset.utils import default_vision_transform as transforms_noaug_train # scale to 224 224 first 
 from pathlib import Path
 import yaml
 from diffusers.schedulers.scheduling_ddim import DDIMScheduler
@@ -13,11 +13,11 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 import matplotlib.pyplot as plt
 import os
 import json
-from dp_gs.dataset.utils import unscale_action
+from dp.dataset.utils import unscale_action
 import numpy as np
 from PIL import Image
-from dp_gs.util.args import ExperimentConfig
-from dp_gs.policy.undo_vision_tf import undo_vision_transform
+from dp.util.args import ExperimentConfig
+from dp.policy.undo_vision_tf import undo_vision_transform
 from transformers import AutoProcessor
 from s2wrapper import forward as multiscale_forward
 

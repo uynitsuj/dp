@@ -434,8 +434,8 @@ class ExperimentConfig:
 @dataclasses.dataclass
 class InferenceConfig:
     # path to model checkpoint
-    model_ckpt_folder: str
-    ckpt_id : int
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/250818_1108"
+    ckpt_id : int = 299
 
 if __name__ == "__main__": 
     args = tyro.cli(ExperimentConfig)

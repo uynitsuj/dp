@@ -4,12 +4,12 @@ import torch
 import numpy as np 
 from .utils import quat_to_rot_6d, quat_to_euler, euler_to_quat, convert_multi_step_np, convert_delta_action, scale_action
 import torchvision.transforms as transforms
-from dp_gs.util.args import DatasetConfig, SharedConfig, LoggingConfig
+from dp.util.args import DatasetConfig, SharedConfig, LoggingConfig
 from glob import glob
 import json 
 from tqdm import tqdm
 import zarr 
-import line_profiler
+# import line_profiler
 import imageio.v3 as iio
 from tqdm import tqdm 
 
@@ -202,7 +202,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         actions = zarr.load(action_fp)
         return len(actions)
     
-    @line_profiler.profile
+    # @line_profiler.profile
     def __getitem__(self, idx : int):
         h5_file, start, end = self.start_end[idx]
         left_action, right_action = self.helper_load_action(h5_file, start, end)
@@ -314,7 +314,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ], axis=1)
         return left, right
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def helper_load_camera(self, h5_file_path : str, start : int, end : int):
         mp4_paths = [h5_file_path.replace(".h5", "_left.mp4"), h5_file_path.replace(".h5", "_right.mp4")]
         indices = np.arange(start, end - self.num_pred_steps * self.subsample_steps, self.subsample_steps)
