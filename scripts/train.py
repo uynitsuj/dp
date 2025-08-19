@@ -57,9 +57,10 @@ def main(args : _config.TrainConfig):
 
     log_name = args.exp_name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
     args = replace(args, logging_cfg=replace(args.logging_cfg, log_name=log_name))
-    args = replace(args, logging_cfg=replace(args.logging_cfg, output_dir=os.path.join(args.logging_cfg.output_dir, log_name)))
+    args = replace(args, logging_cfg=replace(args.logging_cfg, log_dir=os.path.join(args.logging_cfg.output_dir, log_name)))
+
     os.makedirs(args.logging_cfg.output_dir, exist_ok=True)
-    output_dir = args.logging_cfg.output_dir
+    os.makedirs(os.path.join(args.logging_cfg.output_dir, log_name), exist_ok=True)
 
     device = torch.device(args.device)
 
@@ -187,7 +188,7 @@ def main(args : _config.TrainConfig):
 
     # Start a wandb run with `sync_tensorboard=True`
     if global_rank == 0:# and args.logging_cfg.log_name is not None:
-        wandb.init(project="dp", config=args, name=log_name, sync_tensorboard=True)
+        wandb.init(project="dp", dir = args.logging_cfg.log_dir, config=args, name=log_name, sync_tensorboard=True)
 
 
     # SummaryWrite
@@ -263,7 +264,7 @@ def main(args : _config.TrainConfig):
             }
             if ema is not None:
                 save_dict['ema'] = ema.state_dict()
-            torch.save(save_dict, os.path.join(output_dir, f'checkpoint_{epoch_idx}.pt'))
+            torch.save(save_dict, os.path.join(args.logging_cfg.output_dir, log_name, f'checkpoint_{epoch_idx}.pt'))
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch_idx}
@@ -273,31 +274,8 @@ def main(args : _config.TrainConfig):
         if args.logging_cfg.output_dir and misc.is_main_process():
             if log_writer is not None:
                 log_writer.flush()
-            with open(os.path.join(args.logging_cfg.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+            with open(os.path.join(args.logging_cfg.output_dir, log_name, "log.txt"), mode="a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
-
-# if __name__ == '__main__':
-#     # parsing args 
-#     args = tyro.cli(ExperimentConfig)
-
-#     if args.load_config is not None: 
-#         print("loading configs from file: ", args.load_config)
-#         assert os.path.exists(args.load_config), f"Config file does not exist: {args.load_config}"
-#         args : ExperimentConfig = yaml.load(Path(args.load_config).read_text(), Loader=yaml.Loader) 
-
-#     # creating the output directory and logging directory 
-#     if args.logging_cfg.log_name is not None: 
-#         args.logging_cfg.output_dir = os.path.join(args.logging_cfg.output_dir, args.logging_cfg.log_name)
-#     if args.logging_cfg.log_dir is None:
-#         args.logging_cfg.log_dir = args.logging_cfg.output_dir
-#     if args.logging_cfg.output_dir:
-#         Path(args.logging_cfg.output_dir).mkdir(parents=True, exist_ok=True)
-
-#     # dump the args into a yaml file 
-#     with open(os.path.join(args.logging_cfg.output_dir, "run.yaml"), 'w') as f:
-#         yaml.dump(args, f)
-
-#     main(args)
 
 if __name__ == "__main__":
     main(_config.cli())

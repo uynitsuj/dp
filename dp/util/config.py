@@ -263,6 +263,7 @@ _CONFIGS = [
 
         dataset_cfg=LeRobotXmiRbyDatasetConfig(
             repo_id="uynitsuj/soup_can_in_domain_xmi_data_center_cropped_20250818",
+            # repo_id="uynitsuj/overfit_soup_can_data_20250818",
             # default_prompt="pick up the soup can and place it in the bin",
 
             retarget_mode="29D-relative",
