@@ -275,7 +275,7 @@ class TrainerConfig:
 
     # number of workers for dataloader 
     num_workers : int = 20 
-    # num_workers : int = 0
+    # num_workers : int = 0 # for debugging
 
     # number of augmentation workers for DALI
     num_augmentation_workers : int = 20

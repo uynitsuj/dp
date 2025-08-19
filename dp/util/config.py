@@ -279,7 +279,6 @@ _CONFIGS = [
             epochs=300,
         ),
         logging_cfg=LoggingConfig(
-            log_name="250819_1340", # TODO: unify with exp_name
             output_dir="/nfs_us/justinyu/dp",
         ),
     ),

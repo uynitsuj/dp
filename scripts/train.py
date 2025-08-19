@@ -32,6 +32,7 @@ from torch.utils.tensorboard import SummaryWriter
 from dp.util.misc import MultiEpochsDataLoader
 from tqdm import tqdm
 import time
+from datetime import datetime
 
 def main(args : _config.TrainConfig):
     # spawn is needed to initialize vision augmentation within pytorch workers
@@ -54,8 +55,11 @@ def main(args : _config.TrainConfig):
     start_epoch = args.shared_cfg.start_epoch
     num_epochs = args.trainer_cfg.epochs
 
+    log_name = args.exp_name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    args = replace(args, logging_cfg=replace(args.logging_cfg, log_name=log_name))
+    args = replace(args, logging_cfg=replace(args.logging_cfg, output_dir=os.path.join(args.logging_cfg.output_dir, log_name)))
+    os.makedirs(args.logging_cfg.output_dir, exist_ok=True)
     output_dir = args.logging_cfg.output_dir
-    os.makedirs(output_dir, exist_ok=True)
 
     device = torch.device(args.device)
 
@@ -125,7 +129,6 @@ def main(args : _config.TrainConfig):
     else:
         args = replace(args, dataset_cfg=args.dataset_cfg.create())
 
-
     # datasets
     dataset_train = dataset_type(
         dataset_config=args.dataset_cfg,
@@ -171,7 +174,7 @@ def main(args : _config.TrainConfig):
         num_workers=args.trainer_cfg.num_workers,
         collate_fn=collate_fn,
         pin_memory=args.trainer_cfg.pin_memory,
-        # prefetch_factor=2,
+        prefetch_factor=2,
     )
     dataloader_val = MultiEpochsDataLoader(
         dataset_val,
@@ -179,12 +182,12 @@ def main(args : _config.TrainConfig):
         num_workers=args.trainer_cfg.num_workers,
         collate_fn=collate_fn,
         pin_memory=args.trainer_cfg.pin_memory,
-        # prefetch_factor=2,
+        prefetch_factor=2,
     )
 
     # Start a wandb run with `sync_tensorboard=True`
-    if global_rank == 0 and args.logging_cfg.log_name is not None:
-        wandb.init(project="dp", config=args, name=args.logging_cfg.log_name, sync_tensorboard=True)
+    if global_rank == 0:# and args.logging_cfg.log_name is not None:
+        wandb.init(project="dp", config=args, name=log_name, sync_tensorboard=True)
 
 
     # SummaryWrite
