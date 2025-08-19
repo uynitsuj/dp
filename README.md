@@ -1,6 +1,5 @@
 # DP
-Diffusion Policy Re-implimentation
-
+Personal Diffusion Policy Repo
 
 ## Installation
 Clone the repository and initialize submodules:
