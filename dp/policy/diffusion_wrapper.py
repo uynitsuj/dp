@@ -120,7 +120,11 @@ class DiffusionWrapper():
             **(extra_kwargs if args.model_cfg.policy_type == "discrete" else {})
         )
         
-        self.model = load_state_dict_flexible(self.model, torch.load(model_ckpt_name))
+        try:
+            self.model = load_state_dict_flexible(self.model, torch.load(model_ckpt_name))
+        except FileNotFoundError:
+            print(f"File {model_ckpt_name} not found")
+            raise
         self.model = self.model.to(device)
         self.model.eval()
         

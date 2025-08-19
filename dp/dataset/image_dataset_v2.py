@@ -131,6 +131,7 @@ def collate_fn_lambda(
         collated[key] = data
 
     if tokenizer is not None:
+        import pdb; pdb.set_trace() # TODO: verify if using
         # Get discrete actions for the last timestep
         raw_action = collated["action"][:, -1]
 
@@ -161,13 +162,7 @@ def collate_fn_lambda(
     return collated
 
 class SequenceDataset(Dataset):
-    # action_key : str = "action/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
-    # proprio_key : str = "state/cartesian/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
-    # joint_key : str = "state/joint/joint_angle_rad" # for getting gripper information # (n, 16) dtype('float64')
     traj_start_idx : int = 0
-    # gripper_width :  int = 0.0226
-    # scale_left_gripper : float = 1
-    # scale_right_gripper : float = 1
 
     def __init__(
         self, 
@@ -186,6 +181,7 @@ class SequenceDataset(Dataset):
         self.camera_keys = shared_config.camera_keys
         assert os.path.exists(self.dataset_root), f"Dataset root {self.dataset_root} does not exist"
         self.vision_transform = vision_transform
+        self.data_transforms = dataset_config.data_transforms
         
         self.use_delta_action = shared_config.use_delta_action
         self.proprio_noise = dataset_config.proprio_noise
@@ -264,6 +260,7 @@ class SequenceDataset(Dataset):
 
         self.enable_scale_action = dataset_config.scale_action
 
+
     def calculate_dataset_statistics(
         self, 
         output_path : str = "config/action_statistics.json"
@@ -274,15 +271,23 @@ class SequenceDataset(Dataset):
         for file in tqdm(self.common_path):
             action, proprio = self.helper_load_episode_data(file, self.traj_start_idx, self.get_traj_length(file) - self.subsample_steps)
             action = convert_multi_step_np(action, self.num_pred_steps)
-            # delta_left_action = convert_delta_action(action, left_proprio)
-            # delta_right_action = convert_delta_action(right_action, right_proprio)
-            good_files.append(file)
-            # if self.use_delta_action:
-            #     action = np.concatenate([delta_left_action, delta_right_action], axis=-1)
-            # else:
-            #     action = np.concatenate([left_action, right_action], axis=-1)
 
-            min_action, max_action = action.min((0,1)), action.max((0,1)) # only calculate on the action dim
+            data = {
+            "action" : action,
+            "proprio" : proprio,
+            }
+
+            # apply data input transforms here, also make sure appropriate inverse transform is applied at model output at wherever the inference wrapper calls the model (relative, inter-proprio relative, etc)
+            for transform in self.data_transforms.inputs:
+                data = transform(data)
+            
+            action = data["action"] # [B, T, action_dim]
+            proprio = data["proprio"] # [B, proprio_dim]
+
+            good_files.append(file)
+
+            min_action, max_action = action.min((0,1)), action.max((0,1)) # only calculate on the action dim TODO: also try per-timestep dim normalization
+            mean_action = action.mean((0,1))
             if global_min_action is None:
                 global_min_action = min_action
                 global_max_action = max_action
@@ -292,22 +297,23 @@ class SequenceDataset(Dataset):
         
         self.common_path = good_files
         
-        if np.all(global_max_action[..., 9] <= 0.01):
-            self.scale_left_gripper = self.gripper_width / global_max_action[..., 9]
-            global_max_action[..., 9] = self.gripper_width
-        else:
-            self.scale_left_gripper = 1
+        # if np.all(global_max_action[..., 9] <= 0.01):
+        #     self.scale_left_gripper = self.gripper_width / global_max_action[..., 9]
+        #     global_max_action[..., 9] = self.gripper_width
+        # else:
+        #     self.scale_left_gripper = 1
         
-        if np.all(global_max_action[..., 19] <= 0.01):
-            self.scale_right_gripper = self.gripper_width / global_max_action[..., 19]
-            global_max_action[..., 19] = self.gripper_width
-        else:
-            self.scale_right_gripper = 1
+        # if np.all(global_max_action[..., 19] <= 0.01):
+        #     self.scale_right_gripper = self.gripper_width / global_max_action[..., 19]
+        #     global_max_action[..., 19] = self.gripper_width
+        # else:
+        #     self.scale_right_gripper = 1
         # save the statistics 
         stats = {
             "shape" : global_min_action.shape,
             "min_action": global_min_action.flatten().tolist(),
-            "max_action": global_max_action.flatten().tolist()
+            "max_action": global_max_action.flatten().tolist(),
+            "mean_action": mean_action.flatten().tolist(),
         }
         with open(output_path, 'w') as f:
             json.dump(stats, f)
@@ -330,33 +336,35 @@ class SequenceDataset(Dataset):
     def __getitem__(self, idx : int):
         file_path, start, end = self.start_end[idx]
         action, proprio = self.helper_load_episode_data(file_path, start, end)
-        # left_proprio, right_proprio = self.helper_load_proprio(file_path, start, start + 1)
         
-        # proprio = np.concatenate([left_proprio, right_proprio], axis=-1) 
-        # print("proprio.shape", proprio.shape)
-        proprio = torch.from_numpy(proprio[0])
+        proprio = torch.from_numpy(proprio[0]) # [proprio_dim]
         # get rid of the time dimension since there's just one step
-        # proprio = proprio.squeeze(0)
 
-        # get delta actions  TODO: make data transforms at this stage more extensible
-        # if self.use_delta_action:
-        #     left_action = convert_delta_action(left_action[None, :], left_proprio)
-        #     right_action = convert_delta_action(right_action[None, :], right_proprio)
         action = torch.from_numpy(action)
-        # right_action = torch.from_numpy(right_action)
+        action = action.squeeze(0) # [T, action_dim]
 
-        # concatenate actions 
-        # actions = torch.concatenate([left_action, right_action], dim=-1)
+        data = {
+            "action" : action.unsqueeze(0),
+            "proprio" : proprio.unsqueeze(0),
+        }
 
-        # get rid of the time dimension since there's just one step
-        action = action.squeeze(0)
+        # apply data input transforms here, also make sure appropriate inverse transform is applied at model output at wherever the inference wrapper calls the model (relative, inter-proprio relative, etc)
+        for transform in self.data_transforms.inputs:
+            data = transform(data)
+        
+        action = data["action"].squeeze(0) # [T, action_dim]
+        proprio = data["proprio"].squeeze(0) # [proprio_dim]
+
 
         # option for not scaling 
         if self.enable_scale_action:
             actions = scale_action(action, self.stats, type="diffusion") 
 
         # remove nans 
-        actions = torch.nan_to_num(actions)
+        if np.isnan(action).any():
+            print("Warning: Num. NaNs in action: ", np.isnan(action).sum())
+            actions = torch.nan_to_num(actions)
+            print("NaNs in action data zeroed out")
             
         # get camera 
         camera = self.helper_load_camera(self.camera_keys, file_path, start, end)
@@ -372,10 +380,11 @@ class SequenceDataset(Dataset):
         # get action path, joint path, and retrieved indices
         indices = np.arange(start + self.subsample_steps, end + self.subsample_steps, self.subsample_steps)
         episode_fp = file_path + "episode.h5"
+        episode_data = h5py.File(episode_fp, "r")
 
         # get actions and proprio 
-        actions = h5py.File(episode_fp, "r")["action"][indices]
-        proprio = h5py.File(episode_fp, "r")["proprio"][indices]
+        actions = episode_data["action"][indices]
+        proprio = episode_data["proprio"][indices]
         return actions, proprio
 
     def randomize(self, transform : np.ndarray):

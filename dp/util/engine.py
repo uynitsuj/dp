@@ -36,6 +36,16 @@ def train_one_epoch(model: Union[SimplePolicy, DiffusionPolicy], data_loader: It
         for k, v in dataset_item.items():
             dataset_item[k] = v.to(device, non_blocking=True)
 
+        # dataset_item.keys() -> ['action', 'proprio', 'observation']
+        # can apply data transforms here, and also apply inverse transforms at model output at inference wrapper calls
+        # example shapes:
+        # dataset_item["action"].shape -> [128, 1, 30, 29]
+        # dataset_item["proprio"].shape -> [128, 1, 29]
+        # dataset_item["observation"].shape -> torch.Size([128, 1, 3, 3, 224, 224])
+        # TODO: apply data transforms here, and also apply inverse transforms at model output at inference wrapper calls
+
+        # import pdb; pdb.set_trace()
+
         with torch.amp.autocast('cuda', dtype=torch.bfloat16):
             loss = model(dataset_item)
             if isinstance(loss, dict):

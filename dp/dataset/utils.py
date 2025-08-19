@@ -340,8 +340,7 @@ def scale_action(
         action[..., :action_dim] = (action[..., :action_dim] - stat["min"]) / (stat["max"] - stat["min"])
     elif type == "diffusion":
         action[..., :action_dim] = (action[..., :action_dim] - stat["min"]) / (stat["max"] - stat["min"])
-        # convert from [0, 1] to [-1, 1]
-        action = 2 * action - 1
+        action = 2 * action - 1 # [0, 1] to [-1, 1]
     elif type == "standard":
         action[..., :action_dim] = (action[..., :action_dim] - stat["mean"]) / stat["std"]
     return action

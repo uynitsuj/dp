@@ -4,11 +4,52 @@ import enum
 import pathlib
 
 import tyro
+from dp.util import transforms as _transforms
 
 @dataclasses.dataclass
 class DatasetConfig: 
     # Dataset root path 
     dataset_root : Optional[str] = None
+
+
+
+    ########################################################
+    # Data transforms (XMI RBY SPECIFIC)
+    ########################################################
+    # TODO: make class a DataConfigFactory, and use a factory method to create extensible configs instead of hardcoding here for specific data transforms
+
+    # XMI data uses delta actions for rotations/positions, but absolute gripper positions
+    # The conversion script already produces the correct format, but we may need delta conversion
+    # for the rotations and positions (indices 0:6, 6:9, 10:16, 16:19) while keeping
+    # grippers absolute (indices 9, 19)
+    retarget_mode: Literal["20D-relative", "20D-intergripper-relative", "29D-relative", "29D-intergripper-relative"] = "29D-intergripper-relative"
+    
+    data_transforms = _transforms.Group()
+    
+    if "20D" in retarget_mode:
+        delta_action_mask = _transforms.make_bool_mask(
+            9, -1,  # left: 6d_rot (delta), 3d_pos (delta), gripper (absolute)
+            9, -1   # right: 6d_rot (delta), 3d_pos (delta), gripper (absolute) 
+        )
+    elif "29D" in retarget_mode:
+        delta_action_mask = _transforms.make_bool_mask(
+            9, -1,  # left: 6d_rot (delta), 3d_pos (delta), gripper (absolute)
+            9, -1,   # right: 6d_rot (delta), 3d_pos (delta), gripper (absolute) 
+            9,   # head: 6d_rot (delta), 3d_pos (delta)
+        )
+
+    if retarget_mode == "20D-relative" or retarget_mode == "29D-relative":
+        data_transforms = data_transforms.push(
+            inputs=[_transforms.DeltaActions(delta_action_mask)],
+            outputs=[_transforms.AbsoluteActions(delta_action_mask)],
+        )
+
+    elif retarget_mode == "20D-intergripper-relative" or retarget_mode == "29D-intergripper-relative":
+        data_transforms = data_transforms.push(
+            inputs=[_transforms.Bimanual_InterGripperProprio_DeltaActions(delta_action_mask, action_dim=20 if "20D" in retarget_mode else 29)],
+            outputs=[_transforms.Bimanual_InterGripperProprio_AbsoluteActions(delta_action_mask, action_dim=20 if "20D" in retarget_mode else 29)],
+        )
+        
     
     #subsample_data
     data_subsample_ratio : float = -1
@@ -318,7 +359,8 @@ class TrainerConfig:
     pin_memory : bool = True
 
     # number of workers for dataloader 
-    num_workers : int = 20 
+    # num_workers : int = 20 
+    num_workers : int = 0
 
     # number of augmentation workers for DALI
     num_augmentation_workers : int = 20
@@ -359,7 +401,7 @@ class SharedConfig:
     num_cameras : int = 3
 
     # Number of predicted action steps 
-    num_pred_steps : int = 30
+    num_pred_steps : int = 40
     
     # use delta action
     use_delta_action : bool = False
@@ -434,8 +476,8 @@ class ExperimentConfig:
 @dataclasses.dataclass
 class InferenceConfig:
     # path to model checkpoint
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/250818_1108"
-    ckpt_id : int = 299
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/250819_0305"
+    ckpt_id : int = 205
 
 if __name__ == "__main__": 
     args = tyro.cli(ExperimentConfig)

@@ -33,7 +33,9 @@ dependencies=[
     "av",
     #"transformers==4.48.2", 
     "s2wrapper@git+https://github.com/bfshi/scaling_on_scales.git", 
-    "peft"
+    "peft",
+    "viser",
+    
 ]
 
 requires-python= ">=3.10"
