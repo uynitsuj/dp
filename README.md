@@ -20,10 +20,14 @@ uv pip install -e .
 uv pip install transformers[torch]
 
 ```
-## Launch Train (Lerobot Dataset)
-Then run the launch entrypoint script with an appropriate robot config file:
+## Defining training configs and running training
+To fine-tune a model on your own data, you need to define configs for data processing and training. We provide example [configs](dp/util/config.py) starting from standard format lerobot, which you can modify for your own dataset.
+
+Dataset normalization statistics are computed and applied to data automatically prior to training.
+
+Now we can kick off training with the following command:
 ```bash
-uv run script/train.py --dataset-cfg.dataset-root /home/justinyu/dp/data/lerobot2dp/uynitsuj/overfit_soup_can_data_20250818 --logging-cfg.log-name 250819_1113 --logging-cfg.output-dir /nfs_us/justinyu/dp --shared-cfg.num-pred-steps 30 --trainer-cfg.epochs 500
+uv run scripts/train.py dp_xmi_rby --exp-name=my_experiment
 ```
 
 ## Linting
