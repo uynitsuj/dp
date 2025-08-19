@@ -13,10 +13,10 @@ Install dependencies and main package using uv:
 cd dp
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv --python 3.11
-uv sync
 source .venv/bin/activate
+uv sync
 uv pip install -e .
-uv pip install transformers[torch]
+uv pip install submodules/transformers[torch]
 
 ```
 ## Defining training configs and running training
