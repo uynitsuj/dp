@@ -870,6 +870,11 @@ dependencies = [
     { name = "zarr", version = "2.18.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "av" },
@@ -902,6 +907,9 @@ requires-dist = [
     { name = "wandb" },
     { name = "zarr" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.12.3" }]
 
 [[package]]
 name = "draccus"

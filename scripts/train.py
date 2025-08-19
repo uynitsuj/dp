@@ -4,6 +4,7 @@
 import json
 import os
 from dataclasses import replace
+import yaml
 
 import numpy as np
 import torch
@@ -24,6 +25,8 @@ from dp.util.args import DatasetConfig
 from dp.util.ema import ModelEMA
 from dp.util.engine import train_one_epoch
 from dp.util.misc import MultiEpochsDataLoader
+from dp.util.misc import NativeScalerWithGradNormCount as NativeScaler
+
 from tqdm import tqdm
 import time
 from datetime import datetime
@@ -57,6 +60,10 @@ def main(args : _config.TrainConfig):
     os.makedirs(os.path.join(args.logging_cfg.output_dir, log_name), exist_ok=True)
 
     device = torch.device(args.device)
+
+    # dump the args into a yaml file 
+    with open(os.path.join(args.logging_cfg.output_dir, "run.yaml"), 'w') as f:
+        yaml.dump(args, f)
 
     # accelerator = Accelerator()
     # device = accelerator.device
