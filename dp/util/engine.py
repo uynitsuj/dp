@@ -6,14 +6,15 @@ import torch
 import torch.nn as nn
 from . import misc
 
-from dp.util.args import ExperimentConfig
+# from dp.util.args import ExperimentConfig
+import dp.util.config as _config
 from dp.policy.model import SimplePolicy, DiffusionPolicy
 
 def train_one_epoch(model: Union[SimplePolicy, DiffusionPolicy], data_loader: Iterable, 
                     optimizer: torch.optim.Optimizer, lr_scheduler : torch.optim.lr_scheduler,
                     device: torch.device, epoch: int, loss_scaler,
                     log_writer=None, validate=False,
-                    args : ExperimentConfig=None,
+                    args : _config.TrainConfig=None,
                     ema=None):
     if validate:
         model.eval()

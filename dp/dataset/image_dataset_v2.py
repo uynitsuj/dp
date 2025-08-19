@@ -173,6 +173,7 @@ class SequenceDataset(Dataset):
         split : str = "train",
         debug : bool = False,
     ):
+        # TODO: squash some shared config stuff or move into dataset config
         self.seq_length = shared_config.seq_length
         self.num_pred_steps = shared_config.num_pred_steps
         self.dataset_root = dataset_config.dataset_root

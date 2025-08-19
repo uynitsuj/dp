@@ -23,7 +23,8 @@ import torch.utils.data
 import torch.distributed as dist
 from torch import inf
 import numpy as np
-from dp.util.args import ExperimentConfig
+# from dp.util.args import ExperimentConfig
+from dataclasses import dataclass, replace
 
 def load_state_dict_flexible(model, state_dict, return_msg=False):
     """
@@ -264,10 +265,13 @@ def init_distributed_mode(args):
     else:
         print('Not using distributed mode')
         setup_for_distributed(is_master=True)  # hack
-        args.distributed = False
+        # args.distributed = False
+        args = replace(args, distributed=False)
+
         return
 
-    args.distributed = True
+    # args.distributed = True
+    args = replace(args, distributed=True)
 
     print("GPU::", args.gpu)
     torch.cuda.set_device(args.gpu)

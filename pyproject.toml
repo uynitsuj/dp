@@ -16,9 +16,9 @@ dependencies=[
     "wandb",
     "mediapy",
     "diffusers",
-    #"lerobot==0.3.3",
+    "lerobot",
     # "kinpy",
-    "torch==2.8.0",
+    #"torch==2.8.0",
     #"torchvision==0.20.1", 
     #"diffusers==0.18.2", 
     "scikit-image", 
@@ -35,7 +35,9 @@ dependencies=[
     "s2wrapper@git+https://github.com/bfshi/scaling_on_scales.git", 
     "peft",
     "viser",
-    
+    "pandas",
+    "datasets==3.6.0",
+    "torch==2.8.0",
 ]
 
 requires-python= ">=3.10"

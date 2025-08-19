@@ -18,7 +18,10 @@ from dp.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
 from dp.dataset.image_dataset_v2 import SequenceDataset, VideoSampler, CollateFunction
 from dp.dataset.utils import default_vision_transform, aug_vision_transform
 from dp.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
-from dp.util.args import ExperimentConfig
+# from dp.util.args import ExperimentConfig
+import dp.util.config as _config
+from dp.util.args import DatasetConfig
+from dataclasses import replace
 from dp.util.misc import NativeScalerWithGradNormCount as NativeScaler
 from dp.util.engine import train_one_epoch
 from dp.util.ema import ModelEMA
@@ -28,8 +31,9 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dp.util.misc import MultiEpochsDataLoader
 from tqdm import tqdm
+import time
 
-def main(args : ExperimentConfig):
+def main(args : _config.TrainConfig):
     # spawn is needed to initialize vision augmentation within pytorch workers
     try:
         torch.multiprocessing.set_start_method('spawn')
@@ -111,10 +115,16 @@ def main(args : ExperimentConfig):
     num_tasks = misc.get_world_size()
     global_rank = misc.get_rank()
 
-    if args.dataset_cfg.is_sim_data:
-        dataset_type = SimSequenceDataset
+    # if args.dataset_cfg.is_sim_data:
+    #     dataset_type = SimSequenceDataset
+    # else:
+    dataset_type = SequenceDataset
+
+    if type(args.dataset_cfg) == DatasetConfig and args.dataset_cfg.dataset_root is None:
+        raise ValueError("Dataset root directory is not set")
     else:
-        dataset_type = SequenceDataset
+        args = replace(args, dataset_cfg=args.dataset_cfg.create())
+
 
     # datasets
     dataset_train = dataset_type(
@@ -174,7 +184,6 @@ def main(args : ExperimentConfig):
 
     # Start a wandb run with `sync_tensorboard=True`
     if global_rank == 0 and args.logging_cfg.log_name is not None:
-        # wandb.init(entity="diffusion_policy", project="dp", config=args, name=args.logging_cfg.log_name, sync_tensorboard=True)
         wandb.init(project="dp", config=args, name=args.logging_cfg.log_name, sync_tensorboard=True)
 
 
@@ -264,25 +273,28 @@ def main(args : ExperimentConfig):
             with open(os.path.join(args.logging_cfg.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
-if __name__ == '__main__':
-    # parsing args 
-    args = tyro.cli(ExperimentConfig)
+# if __name__ == '__main__':
+#     # parsing args 
+#     args = tyro.cli(ExperimentConfig)
 
-    if args.load_config is not None: 
-        print("loading configs from file: ", args.load_config)
-        assert os.path.exists(args.load_config), f"Config file does not exist: {args.load_config}"
-        args : ExperimentConfig = yaml.load(Path(args.load_config).read_text(), Loader=yaml.Loader) 
+#     if args.load_config is not None: 
+#         print("loading configs from file: ", args.load_config)
+#         assert os.path.exists(args.load_config), f"Config file does not exist: {args.load_config}"
+#         args : ExperimentConfig = yaml.load(Path(args.load_config).read_text(), Loader=yaml.Loader) 
 
-    # creating the output directory and logging directory 
-    if args.logging_cfg.log_name is not None: 
-        args.logging_cfg.output_dir = os.path.join(args.logging_cfg.output_dir, args.logging_cfg.log_name)
-    if args.logging_cfg.log_dir is None:
-        args.logging_cfg.log_dir = args.logging_cfg.output_dir
-    if args.logging_cfg.output_dir:
-        Path(args.logging_cfg.output_dir).mkdir(parents=True, exist_ok=True)
+#     # creating the output directory and logging directory 
+#     if args.logging_cfg.log_name is not None: 
+#         args.logging_cfg.output_dir = os.path.join(args.logging_cfg.output_dir, args.logging_cfg.log_name)
+#     if args.logging_cfg.log_dir is None:
+#         args.logging_cfg.log_dir = args.logging_cfg.output_dir
+#     if args.logging_cfg.output_dir:
+#         Path(args.logging_cfg.output_dir).mkdir(parents=True, exist_ok=True)
 
-    # dump the args into a yaml file 
-    with open(os.path.join(args.logging_cfg.output_dir, "run.yaml"), 'w') as f:
-        yaml.dump(args, f)
+#     # dump the args into a yaml file 
+#     with open(os.path.join(args.logging_cfg.output_dir, "run.yaml"), 'w') as f:
+#         yaml.dump(args, f)
 
-    main(args)
+#     main(args)
+
+if __name__ == "__main__":
+    main(_config.cli())

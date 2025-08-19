@@ -6,49 +6,13 @@ import pathlib
 import tyro
 from dp.util import transforms as _transforms
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class DatasetConfig: 
     # Dataset root path 
     dataset_root : Optional[str] = None
 
-
-
-    ########################################################
-    # Data transforms (XMI RBY SPECIFIC)
-    ########################################################
-    # TODO: make class a DataConfigFactory, and use a factory method to create extensible configs instead of hardcoding here for specific data transforms
-
-    # XMI data uses delta actions for rotations/positions, but absolute gripper positions
-    # The conversion script already produces the correct format, but we may need delta conversion
-    # for the rotations and positions (indices 0:6, 6:9, 10:16, 16:19) while keeping
-    # grippers absolute (indices 9, 19)
-    retarget_mode: Literal["20D-relative", "20D-intergripper-relative", "29D-relative", "29D-intergripper-relative"] = "29D-intergripper-relative"
-    
-    data_transforms = _transforms.Group()
-    
-    if "20D" in retarget_mode:
-        delta_action_mask = _transforms.make_bool_mask(
-            9, -1,  # left: 6d_rot (delta), 3d_pos (delta), gripper (absolute)
-            9, -1   # right: 6d_rot (delta), 3d_pos (delta), gripper (absolute) 
-        )
-    elif "29D" in retarget_mode:
-        delta_action_mask = _transforms.make_bool_mask(
-            9, -1,  # left: 6d_rot (delta), 3d_pos (delta), gripper (absolute)
-            9, -1,   # right: 6d_rot (delta), 3d_pos (delta), gripper (absolute) 
-            9,   # head: 6d_rot (delta), 3d_pos (delta)
-        )
-
-    if retarget_mode == "20D-relative" or retarget_mode == "29D-relative":
-        data_transforms = data_transforms.push(
-            inputs=[_transforms.DeltaActions(delta_action_mask)],
-            outputs=[_transforms.AbsoluteActions(delta_action_mask)],
-        )
-
-    elif retarget_mode == "20D-intergripper-relative" or retarget_mode == "29D-intergripper-relative":
-        data_transforms = data_transforms.push(
-            inputs=[_transforms.Bimanual_InterGripperProprio_DeltaActions(delta_action_mask, action_dim=20 if "20D" in retarget_mode else 29)],
-            outputs=[_transforms.Bimanual_InterGripperProprio_AbsoluteActions(delta_action_mask, action_dim=20 if "20D" in retarget_mode else 29)],
-        )
+    # Data transforms
+    data_transforms: _transforms.Group = dataclasses.field(default_factory=_transforms.Group)
         
     # subsample_data [0.0, 1.0]
     data_subsample_ratio : float = -1
@@ -267,16 +231,16 @@ class ActionDecoderConfig:
 @dataclasses.dataclass
 class ModelConfig: 
     # Policy (llama + adapter) configuration
-    policy_cfg : PolicyConfig
+    policy_cfg : PolicyConfig = dataclasses.field(default_factory=PolicyConfig)
 
     # vision encoder config 
-    vision_encoder_cfg : VisionEncoderConfig
+    vision_encoder_cfg : VisionEncoderConfig = dataclasses.field(default_factory=VisionEncoderConfig)
 
     # action decoder config (experimental)
-    action_decoder_cfg : ActionDecoderConfig
+    action_decoder_cfg : ActionDecoderConfig = dataclasses.field(default_factory=ActionDecoderConfig)
 
     # preference learning config 
-    pref_cfg : PreferenceLearningConfig
+    pref_cfg : PreferenceLearningConfig = dataclasses.field(default_factory=PreferenceLearningConfig)
 
     # policy type 
     policy_type : Literal["simple", "diffusion", "discrete"] = "diffusion"
@@ -320,12 +284,9 @@ class TrainerConfig:
     augment_with_gpu : bool = False
     
 @dataclasses.dataclass
-class SharedConfig:
+class SharedConfig: # TODO: migrate some of these to train config and squash some args
     # Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus
     batch_size : int = 128
-
-    # Use 6DoF Rotation 
-    rot_6d : bool = True 
 
     # number of frames in a sequence 
     seq_length : int = 1
@@ -353,9 +314,6 @@ class SharedConfig:
 
     # Number of predicted action steps 
     num_pred_steps : int = 40
-    
-    # use delta action
-    use_delta_action : bool = False
 
     # camera keys 
     camera_keys : List[str] = dataclasses.field(default_factory=lambda: ["left_camera-images-rgb", "right_camera-images-rgb", "top_camera-images-rgb"])
@@ -383,46 +341,46 @@ class LoggingConfig:
     # log name (for wandb)
     log_name : Optional[str] = None
 
-@dataclasses.dataclass
-class ExperimentConfig: 
-    # Dataset configuration
-    dataset_cfg: DatasetConfig
+# @dataclasses.dataclass
+# class ExperimentConfig: 
+#     # Dataset configuration
+#     dataset_cfg: DatasetConfig
 
-    # Model configuration
-    model_cfg: ModelConfig
+#     # Model configuration
+#     model_cfg: ModelConfig
 
-    # Optimizer configuration
-    optimizer_cfg: OptimizerConfig
+#     # Optimizer configuration
+#     optimizer_cfg: OptimizerConfig
 
-    # Shared configuration
-    shared_cfg: SharedConfig
+#     # Shared configuration
+#     shared_cfg: SharedConfig
 
-    # Logging configuration 
-    logging_cfg: LoggingConfig
+#     # Logging configuration 
+#     logging_cfg: LoggingConfig
 
-    # trainer configuration
-    trainer_cfg: TrainerConfig
+#     # trainer configuration
+#     trainer_cfg: TrainerConfig
 
-    # train or eval 
-    train : bool = True
+#     # train or eval 
+#     train : bool = True
 
-    # number of distributed processes (required by torch distributed)
-    world_size: int = 1
+#     # number of distributed processes (required by torch distributed)
+#     world_size: int = 1
 
-    # local rank of the process (required by torch distributed)
-    local_rank: int = -1
+#     # local rank of the process (required by torch distributed)
+#     local_rank: int = -1
 
-    # distributed training on the optimizer (required by torch distributed)
-    dist_on_itp: bool = False
+#     # distributed training on the optimizer (required by torch distributed)
+#     dist_on_itp: bool = False
 
-    # distributed training url (required by torch distributed)
-    dist_url: str = 'env://'
+#     # distributed training url (required by torch distributed)
+#     dist_url: str = 'env://'
 
-    # device to use for training / testing (required by torch distributed)
-    device : str = "cuda"
+#     # device to use for training / testing (required by torch distributed)
+#     device : str = "cuda"
 
-    # load config. instead of using command line arguments, load from a config file
-    load_config: Optional[str] = None
+#     # load config. instead of using command line arguments, load from a config file
+#     load_config: Optional[str] = None
 
 @dataclasses.dataclass
 class InferenceConfig:
@@ -430,6 +388,6 @@ class InferenceConfig:
     model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/250819_0305"
     ckpt_id : int = 205
 
-if __name__ == "__main__": 
-    args = tyro.cli(ExperimentConfig)
-    dict_args = dataclasses.asdict(args)
+# if __name__ == "__main__": 
+#     args = tyro.cli(ExperimentConfig)
+#     dict_args = dataclasses.asdict(args)
