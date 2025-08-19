@@ -20,11 +20,11 @@ uv pip install submodules/transformers[torch]
 
 ```
 ## Defining training configs and running training
-To fine-tune a model on your own data, you need to define configs for data processing and training. We provide example [configs](dp/util/config.py) starting from standard format lerobot, which you can modify for your own dataset.
+To fine-tune a model on your own data, you need to define configs for data processing and training. Example [configs](dp/util/config.py) are provided, starting from standard format lerobot dataset, which you can modify and add interfaces for your own dataset format.
 
 Dataset normalization statistics are computed and applied to data automatically prior to training.
 
-Now we can kick off training with the following command:
+We run training with the command:
 ```bash
 uv run scripts/train.py dp_xmi_rby --exp-name=my_experiment
 ```
