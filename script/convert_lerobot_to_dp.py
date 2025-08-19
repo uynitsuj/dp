@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import time
 
 import h5py
 import numpy as np
@@ -12,8 +13,88 @@ from PIL import Image
 from tqdm import tqdm
 import tyro
 
+import subprocess
+import pandas as pd
+
 # LeRobot
-from lerobot.datasets.lerobot_dataset import HF_LEROBOT_HOME, LeRobotDataset
+from lerobot.datasets.lerobot_dataset import HF_LEROBOT_HOME, LeRobotDataset, LeRobotDatasetMetadata
+
+def _discover_keys_from_meta(meta: LeRobotDatasetMetadata,
+                             fallback_proprio: str = "joint_position",
+                             fallback_action: str = "actions",
+                             fallback_videos: Optional[List[str]] = None
+                             ) -> Tuple[str, str, List[str]]:
+    if fallback_videos is None:
+        fallback_videos = ["left_camera-images-rgb", "right_camera-images-rgb", "top_camera-images-rgb"]
+
+    features = getattr(meta, "features", {}) or {}
+    proprio_key = fallback_proprio
+    action_key = fallback_action
+    video_keys = list(meta.video_keys) if hasattr(meta, "video_keys") else fallback_videos
+
+    if isinstance(features, dict) and features:
+        if "joint_position" in features:
+            proprio_key = "joint_position"
+        elif "state" in features:
+            proprio_key = "state"
+
+        if "actions" in features:
+            action_key = "actions"
+        elif "action" in features:
+            action_key = "action"
+
+        # prefer dtype=video from metadata
+        vids = [k for k, v in features.items() if isinstance(v, dict) and v.get("dtype") == "video"]
+        if vids:
+            video_keys = vids
+
+    return proprio_key, action_key, video_keys
+
+
+def _read_episode_arrays(meta: LeRobotDatasetMetadata,
+                         ep_idx: int,
+                         proprio_key: str,
+                         action_key: str) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Read the parquet for a single episode into numpy arrays without touching video.
+    """
+    pq_rel = meta.get_data_file_path(ep_idx)        # relative path string
+    pq_path = (meta.root / pq_rel).resolve()
+    df = pd.read_parquet(pq_path, columns=[proprio_key, action_key])
+
+    # Columns are lists/arrays per frame. Stack to (T, D)
+    def _col_to_array(series: pd.Series) -> np.ndarray:
+        vals = series.to_numpy()
+        if isinstance(vals[0], (list, np.ndarray)):
+            try:
+                return np.vstack(vals)
+            except Exception:
+                return np.stack([np.asarray(v) for v in vals], axis=0)
+        # Fallback for scalar columns (unlikely here)
+        return vals.astype(np.float32)[:, None]
+
+    proprio = _col_to_array(df[proprio_key])
+    action = _col_to_array(df[action_key])
+    return proprio, action
+
+
+def _ffmpeg_extract_jpgs(video_path: Path, out_dir: Path) -> None:
+    """
+    Use ffmpeg to dump every frame to JPGs. Assumes the mp4 was encoded from episode frames at meta.fps.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # -vsync 0 prevents frame duplication/dropping; -q:v 2 ~ high quality.
+    cmd = [
+        "ffmpeg",
+        "-hide_banner", "-loglevel", "error",
+        "-y",
+        "-i", str(video_path),
+        "-vsync", "0",
+        "-start_number", "0",
+        "-q:v", "2",
+        str(out_dir / "%06d.jpg"),
+    ]
+    subprocess.run(cmd, check=True)
 
 
 def _discover_keys(dataset: LeRobotDataset,
@@ -96,55 +177,55 @@ def _episode_worker(repo_id: str,
                     parent_action_key: str,
                     parent_video_keys: List[str]) -> Dict:
     """
-    Work on a single episode in a separate process:
-      - Open LeRobotDataset(episodes=[ep_idx])
-      - Discover keys
-      - Export HDF5 + JPEGs
-    Returns a small manifest entry.
+    Fast worker: read parquet -> HDF5, and extract JPGs via ffmpeg from episode MP4s.
     """
+    t0 = time.time()
     out_root = Path(out_root_str)
     ep_out = out_root / f"episode_{ep_idx:06d}"
     ep_out.mkdir(parents=True, exist_ok=True)
 
-    # Load dataset restricted to this episode (avoids global index math and decoder sharing).
-    ds = LeRobotDataset(repo_id=repo_id, episodes=[ep_idx])
+    # Only metadata (fast, no video decode)
+    meta = LeRobotDatasetMetadata(repo_id=repo_id)
 
-    proprio_key, action_key, video_keys = _discover_keys(
-        ds, fallback_proprio=parent_proprio_key, fallback_action=parent_action_key, fallback_videos=parent_video_keys
+    proprio_key, action_key, video_keys = _discover_keys_from_meta(
+        meta,
+        fallback_proprio=parent_proprio_key,
+        fallback_action=parent_action_key,
+        fallback_videos=parent_video_keys,
     )
 
-    proprio_list, action_list = [], []
-    video_frames: Dict[str, List[np.ndarray]] = {k: [] for k in video_keys}
+    # Read arrays directly from parquet
+    t1 = time.time()
+    proprio_arr, action_arr = _read_episode_arrays(meta, ep_idx, proprio_key, action_key)
+    t2 = time.time()
 
-    for gidx in range(len(ds)):
-        sample = ds[gidx]
-        if proprio_key not in sample or action_key not in sample:
-            raise KeyError(
-                f"Episode {ep_idx}: missing keys in sample[{gidx}]. "
-                f"Have: {list(sample.keys())}, need: '{proprio_key}', '{action_key}'"
-            )
-
-        proprio_list.append(np.asarray(sample[proprio_key]))
-        action_list.append(np.asarray(sample[action_key]))
-
-        for vkey in video_keys:
-            if vkey in sample:
-                video_frames[vkey].append(np.asarray(sample[vkey]))
-
-    proprio_arr = np.stack(proprio_list, axis=0)
-    action_arr = np.stack(action_list, axis=0)
-
+    # Save HDF5
     h5_path = ep_out / "episode.h5"
-    meta = {
+    h5_meta = {
         "repo_id": repo_id,
         "episode_index": ep_idx,
-        "num_frames": proprio_arr.shape[0],
+        "num_frames": int(proprio_arr.shape[0]),
         "proprio_key": proprio_key,
         "action_key": action_key,
         "video_keys": video_keys,
+        "fps": meta.fps,
     }
-    _save_episode_h5(h5_path, proprio_arr, action_arr, meta)
-    _dump_episode_jpgs(ep_out, video_frames)
+    _save_episode_h5(h5_path, proprio_arr, action_arr, h5_meta)
+    t3 = time.time()
+
+    # Extract JPGs with ffmpeg from each camera MP4 (if present)
+    for vkey in video_keys:
+        vid_rel = meta.get_video_file_path(ep_index=ep_idx, vid_key=vkey)
+        vid_path = (meta.root / vid_rel).resolve()
+        if vid_path.is_file():
+            cam_dir = ep_out / vkey
+            _ffmpeg_extract_jpgs(vid_path, cam_dir)
+        # else: some datasets may omit certain cams for some episodes
+
+    t4 = time.time()
+    print(
+        f"[ep {ep_idx:06d}] parquet->np: {t2 - t1:.3f}s | save h5: {t3 - t2:.3f}s | ffmpeg mp4_to_jpgs: {t4 - t3:.3f}s | total: {t4 - t0:.3f}s"
+    )
 
     return {
         "dir": f"episode_{ep_idx:06d}",
@@ -153,12 +234,13 @@ def _episode_worker(repo_id: str,
         "frames": int(proprio_arr.shape[0]),
     }
 
+
 def convert_dataset_parallel(repo_id: str, output_dir: str, num_workers: int = 4) -> None:
     """
     Parallel, per-episode export to HDF5 + JPEGs.
     """
     # Probe once in the parent to list episodes & get fallback keys.
-    probe = LeRobotDataset(repo_id=repo_id)
+    probe = LeRobotDataset(repo_id=repo_id, video_backend="pyav")
     proprio_key, action_key, video_keys = _discover_keys(probe)
 
     # Determine which episodes to export.
@@ -215,9 +297,9 @@ def convert_dataset_parallel(repo_id: str, output_dir: str, num_workers: int = 4
 
 @dataclass
 class Args:
-    repo_id: str = "uynitsuj/overfit_soup_can_data_20250818"
+    repo_id: str = "uynitsuj/soup_can_in_domain_xmi_data_center_cropped_20250818"
     output_dir: str = "data/lerobot2dp"
-    num_workers: int = 4
+    num_workers: int = 10
     overwrite: bool = True
 
 

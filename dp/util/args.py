@@ -329,7 +329,7 @@ class TrainerConfig:
 @dataclasses.dataclass
 class SharedConfig:
     # Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus
-    batch_size : int = 32
+    batch_size : int = 128
 
     # Use 6DoF Rotation 
     rot_6d : bool = True 
