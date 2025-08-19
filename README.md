@@ -1,5 +1,5 @@
 # DP
-Personal Diffusion Policy Repo
+Diffusion Policy training and inference infrastructure repo
 
 ## Installation
 Clone the repository and initialize submodules:
