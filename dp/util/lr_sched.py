@@ -6,10 +6,10 @@
 
 import math
 
-from dp_gs.util.args import ExperimentConfig
+from dp_gs.util.args import ExperimentConfig, OptimizerConfig
 
 
-def adjust_learning_rate(optimizer, epoch : int, args : ExperimentConfig):
+def adjust_learning_rate(optimizer: OptimizerConfig, epoch : int, args : ExperimentConfig) -> float:
     """Decay the learning rate with half-cycle cosine after warmup"""
     if epoch < args.optimizer_cfg.warmup_epochs:
         lr = args.optimizer_cfg.lr * epoch / args.optimizer_cfg.warmup_epochs 

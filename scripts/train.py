@@ -114,7 +114,7 @@ def main(args : _config.TrainConfig):
     # else:
     dataset_type = SequenceDataset
 
-    if type(args.dataset_cfg) == DatasetConfig and args.dataset_cfg.dataset_root is None:
+    if type(args.dataset_cfg) is DatasetConfig and args.dataset_cfg.dataset_root is None:
         raise ValueError("Dataset root directory is not set")
     else:
         args = replace(args, dataset_cfg=args.dataset_cfg.create())

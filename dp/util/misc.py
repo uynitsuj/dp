@@ -19,6 +19,7 @@ from collections import defaultdict, deque
 # from dp.util.args import ExperimentConfig
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -315,7 +316,7 @@ class NativeScalerWithGradNormCount:
         self._scaler.load_state_dict(state_dict)
 
 
-def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
+def get_grad_norm_(parameters: torch.Tensor | Any, norm_type: float = 2.0) -> torch.Tensor:
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
     parameters = [p for p in parameters if p.grad is not None]
@@ -507,7 +508,7 @@ class DistributedSubEpochLongSampler(torch.utils.data.Sampler):
     def set_epoch(self, epoch):
         self.epoch = epoch
         
-def download(url: str, root: str):
+def download(url: str, root: str) -> str:
     os.makedirs(root, exist_ok=True)
     filename = os.path.basename(url)
     download_target = os.path.join(root, filename)
@@ -577,5 +578,5 @@ class MultiEpochsDataLoader(torch.utils.data.DataLoader):
         return len(self.sampler)
 
     def __iter__(self):
-        for i in range(len(self)):
+        for _i in range(len(self)):
             yield next(self.iterator)

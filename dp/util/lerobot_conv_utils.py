@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import shutil
 import subprocess
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import tyro
+from datasets.features import features
 
 # LeRobot
 from lerobot.datasets.lerobot_dataset import HF_LEROBOT_HOME, LeRobotDataset, LeRobotDatasetMetadata
@@ -234,15 +236,13 @@ def _episode_worker(repo_id: str,
     }
 
 
-def convert_dataset_parallel(repo_id: str, output_dir: str = None, num_workers: int = 10) -> None:
+def convert_dataset_parallel(repo_id: str, output_dir: str | None = None, num_workers: int = 10) -> str:
     """
     Parallel, per-episode export to HDF5 + JPEGs.
     """
     # Probe once in the parent to list episodes & get fallback keys.
     # Monkey-patch to fix 'List' feature type error in old datasets
     try:
-        from datasets.features import features
-
         _OLD_GENERATE_FROM_DICT = features.generate_from_dict
 
         def _new_generate_from_dict(obj):
@@ -333,7 +333,6 @@ def main(args: Args):
     out_dir = Path(args.output_dir) / args.repo_id
     if out_dir.exists() and args.overwrite:
         print(f"Overwriting {out_dir}")
-        import shutil
         shutil.rmtree(out_dir)
     convert_dataset_parallel(args.repo_id, out_dir, args.num_workers)
 

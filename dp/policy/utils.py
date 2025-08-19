@@ -233,12 +233,13 @@ class ConditionalUnet1D(nn.Module):
         for mid_module in self.mid_modules:
             x = mid_module(x, global_feature)
 
-        for idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
+        for _idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
             hp = h.pop()
             try:
                 x = torch.cat((x, hp), dim=1)
             except:
-                import pdb; pdb.set_trace()
+                import pdb
+                pdb.set_trace()
                 x = torch.cat((x, hp), dim=1)
 
             x = resnet(x, global_feature)

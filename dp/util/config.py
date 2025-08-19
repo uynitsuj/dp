@@ -74,13 +74,13 @@ class LeRobotXmiRbyDatasetConfig(LeRobotDatasetConfigFactory):
                 9,   # head: 6d_rot (delta), 3d_pos (delta)
             )
 
-        if self.retarget_mode == "20D-relative" or self.retarget_mode == "29D-relative":
+        if self.retarget_mode in ["20D-relative", "29D-relative"]:
             data_transforms = data_transforms.push(
                 inputs=[_transforms.DeltaActions(delta_action_mask)],
                 outputs=[_transforms.AbsoluteActions(delta_action_mask)],
             )
 
-        elif self.retarget_mode == "20D-intergripper-relative" or self.retarget_mode == "29D-intergripper-relative":
+        elif self.retarget_mode in ["20D-intergripper-relative", "29D-intergripper-relative"]:
             data_transforms = data_transforms.push(
                 inputs=[_transforms.Bimanual_InterGripperProprio_DeltaActions(delta_action_mask, action_dim=20 if "20D" in self.retarget_mode else 29)],
                 outputs=[_transforms.Bimanual_InterGripperProprio_AbsoluteActions(delta_action_mask, action_dim=20 if "20D" in self.retarget_mode else 29)],
@@ -120,10 +120,7 @@ class LeRobotYamDatasetConfig(LeRobotDatasetConfigFactory):
             raise ValueError(f"Invalid action space: {self.action_space}")
 
         # Data transforms using YAM policy transforms
-        data_transforms = _transforms.Group(
-            inputs=[yam_policy.YamInputs(action_dim=model_config.action_dim, model_type=model_config.model_type)],
-            outputs=[yam_policy.YamOutputs(robot_action_dim=robot_action_dim)],
-        )
+        data_transforms = _transforms.Group()
 
         # We return all data transforms for training and inference. No need to change anything here.
         return dataclasses.replace(

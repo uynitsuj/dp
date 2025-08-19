@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import shutil
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -11,8 +12,6 @@ import h5py
 import numpy as np
 import pandas as pd
 import tyro
-
-# LeRobot
 from lerobot.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatasetMetadata
 from PIL import Image
 from tqdm import tqdm
@@ -306,7 +305,6 @@ def main(args: Args):
     out_dir = Path(args.output_dir) / args.repo_id
     if out_dir.exists() and args.overwrite:
         print(f"Overwriting {out_dir}")
-        import shutil
         shutil.rmtree(out_dir)
     convert_dataset_parallel(args.repo_id, out_dir, args.num_workers)
 

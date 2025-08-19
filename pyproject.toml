@@ -91,7 +91,7 @@ lint.ignore = [
     "RUF009"
 ]
 lint.extend-select = ["E501"]
-exclude = ["*.ipynb", "submodules/*", "test/*"]
+exclude = ["*.ipynb", "submodules/*", "test/*", "scripts/deprecated/*"]
 
 [tool.ruff.format]
 docstring-code-format = true

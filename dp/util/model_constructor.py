@@ -123,7 +123,7 @@ def preference_policy_constructor(
     pref_learning_cfg : PreferenceLearningConfig, 
     policy : ICRT, 
     reference_policy : ICRT,
-): 
+) -> PICRT:  
     model = PICRT(
         policy, 
         reference_policy, 
