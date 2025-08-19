@@ -40,6 +40,6 @@ ruff format # code format
 
 ## Roadmap/Todos
 
-- [ ] Make DataConfig a ConfigFactory so that it's more extensible to different data formats
-- [ ] Make lerobot data an acceptable input format (don't need to write a new dataloader, just convert data prior to train, possibly rm data after train)
+- [x] Make DataConfig a ConfigFactory so that it's more extensible to different data formats
+- [x] Make lerobot data an acceptable input format (don't need to write a new dataloader, just convert data prior to train, possibly rm data after train)
 - [ ] Currently dataloader is hardcoded for single timestep obs, fix this lol
