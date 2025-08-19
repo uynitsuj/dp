@@ -5,7 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
+
 from dp_gs.util.args import ExperimentConfig
+
 
 def adjust_learning_rate(optimizer, epoch : int, args : ExperimentConfig):
     """Decay the learning rate with half-cycle cosine after warmup"""

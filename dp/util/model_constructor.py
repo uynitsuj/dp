@@ -1,8 +1,10 @@
 from typing import Union
-from dp_gs.util.args import ModelConfig, SharedConfig, VisionEncoderConfig, PolicyConfig, PreferenceLearningConfig
+
 from dp_gs.models.backbones.encoders import VisionEncoder, VisionEncoderCNN
 from dp_gs.models.policy.icrt import ICRT
 from dp_gs.models.policy.picrt import PICRT
+from dp_gs.util.args import ModelConfig, PolicyConfig, PreferenceLearningConfig, SharedConfig, VisionEncoderConfig
+
 
 def vision_encoder_cond(
     vision_encoder_cfg : VisionEncoderConfig

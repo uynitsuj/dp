@@ -1,16 +1,28 @@
-import os 
-import h5py
-import torch 
-import numpy as np 
-from .utils import quat_to_rot_6d, quat_to_euler, euler_to_quat, convert_multi_step_np, convert_delta_action, scale_action
-import torchvision.transforms as transforms
-from dp.util.args import DatasetConfig, SharedConfig, LoggingConfig
+import json
+import os
 from glob import glob
-import json 
-from tqdm import tqdm
-import zarr 
+
+import h5py
+
 # import line_profiler
 import imageio.v3 as iio
+import numpy as np
+import torch
+import zarr
+from torchvision import transforms
+from tqdm import tqdm
+
+from dp.util.args import DatasetConfig, LoggingConfig, SharedConfig
+
+from .utils import (
+    convert_delta_action,
+    convert_multi_step_np,
+    euler_to_quat,
+    quat_to_euler,
+    quat_to_rot_6d,
+    scale_action,
+)
+
 
 class SequenceDataset(torch.utils.data.Dataset):
     action_key : str = "action/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
@@ -319,7 +331,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         indices = np.arange(start, end - self.num_pred_steps * self.subsample_steps, self.subsample_steps)
         camera_observations = []
         
-        for camera_name, mp4_path in zip(self.camera_keys, mp4_paths):
+        for camera_name, mp4_path in zip(self.camera_keys, mp4_paths, strict=False):
             with iio.imopen(mp4_path, "r", plugin="pyav") as file:
                 camera = [file.read(index=ind, constant_framerate=True) for ind in indices]
             camera = np.stack(camera)

@@ -1,15 +1,17 @@
 # python -m tools/convert_data.py --droid_dir /home/lawrence/icrl/xembody_data_franka_r2d2 --out_dir data_output --visualize
 # Known issue: if last byte of the image is zero, it has saving issues. 
 # Currently, it is fixed by appending zeros to the image.
+import argparse
+import json
 import os
-import argparse 
+from collections import defaultdict
+from glob import glob
+
 import h5py
 import numpy as np
 from PIL import Image
-from glob import glob
-import json
 from tqdm import tqdm
-from collections import defaultdict
+
 
 def init_hdf5_file(file, epi_idx, max_epi_len, resolution : tuple):
     

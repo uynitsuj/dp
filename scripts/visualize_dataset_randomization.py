@@ -12,11 +12,12 @@ Create a visualization script that will take in the root_dir and
 combines first image from each trajectory with name env_* into a video at 30fps so that we can see the randomization
 """
 
-import os
 import glob
+import os
+from dataclasses import dataclass
+
 import cv2
 import tyro
-from dataclasses import dataclass
 from tqdm import tqdm
 
 

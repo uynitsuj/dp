@@ -1,16 +1,18 @@
-import torch
-from dp.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
-# from timm.data.transforms_factory import transforms_noaug_train
-from dp.dataset.utils import default_vision_transform as transforms_noaug_train # scale to 224 224 first 
+import json
+import os
 from pathlib import Path
+
+import numpy as np
+import torch
 import yaml
 from diffusers.schedulers.scheduling_ddim import DDIMScheduler
-import os
-import json
-from dp.dataset.utils import unscale_action
-import numpy as np
-from dp.util.args import ExperimentConfig
 from transformers import AutoProcessor
+
+# from timm.data.transforms_factory import transforms_noaug_train
+from dp.dataset.utils import default_vision_transform as transforms_noaug_train  # scale to 224 224 first 
+from dp.dataset.utils import unscale_action
+from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
+from dp.util.args import ExperimentConfig
 
 # def load_state_dict_flexible(model, state_dict):
 #     """
@@ -164,7 +166,7 @@ class DiffusionWrapper():
                 _ = self.model.forward_inference(dummy_batch, self.vision_transform)
                 print("Forward pass successful with dummy data")
             except Exception as e:
-                print(f"Forward pass failed: {str(e)}")
+                print(f"Forward pass failed: {e!s}")
                 raise
 
     def _process_images(self, nimage: torch.Tensor) -> torch.Tensor:

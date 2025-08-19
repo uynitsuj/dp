@@ -1,6 +1,7 @@
 import numpy as onp
 from scipy.spatial.transform import Rotation
 
+
 def gram_schmidt(vectors : onp.ndarray) -> onp.ndarray: 
     """
     Apply Gram-Schmidt process to a set of vectors

@@ -1,6 +1,8 @@
-import torch
-import torch.nn as nn
 from typing import Optional
+
+import torch
+from torch import nn
+
 
 class ModelEMA:
     """

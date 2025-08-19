@@ -1,20 +1,23 @@
-import json 
-# import line_profiler
-import numpy as np 
-import os 
-import torch 
-import torchvision.transforms as transforms
-
+import json
+import os
 from glob import glob
+from typing import Iterator, List, Optional
+
+import h5py
+
+# import line_profiler
+import numpy as np
+import torch
 from PIL import Image
-from torch.utils.data import Sampler, Dataset
-from tqdm import tqdm 
-from typing import List, Iterator, Optional
+from torch.utils.data import Dataset, Sampler
+from torchvision import transforms
+from tqdm import tqdm
 from transformers import AutoProcessor
 
-from dp.util.args import DatasetConfig, SharedConfig, LoggingConfig
+from dp.util.args import DatasetConfig, LoggingConfig, SharedConfig
+
 from .utils import convert_multi_step_np, scale_action
-import h5py
+
 
 class CollateFunction:
     def __init__(

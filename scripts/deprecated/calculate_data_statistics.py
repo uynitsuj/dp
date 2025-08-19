@@ -1,9 +1,11 @@
-import h5py 
+import json
+
+import h5py
 import numpy as np
 import torch
-import json
-from dp_gs.dataset.utils import euler_to_rot_6d, convert_multi_step, convert_delta_action
-from tqdm import tqdm 
+from dp_gs.dataset.utils import convert_delta_action, convert_multi_step, euler_to_rot_6d
+from tqdm import tqdm
+
 
 def get_action_statistics(
     data_path : str, 
@@ -72,7 +74,7 @@ if __name__ == "__main__":
 
     global_min_action, global_max_action = None, None
 
-    for dp, hk in zip(dataset_config["dataset_path"], dataset_config["hdf5_keys"]):
+    for dp, hk in zip(dataset_config["dataset_path"], dataset_config["hdf5_keys"], strict=False):
         min_action, max_action = get_action_statistics(dp, hk, num_pred_steps)
         if global_min_action is None:
             global_min_action = min_action

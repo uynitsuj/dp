@@ -1,23 +1,27 @@
 # CUDA_VISIBLE_DEVICES=0 python script/inference.py --model_ckpt_folder /shared/projects/icrl/dp_outputs/250208_1027 --ckpt_id 50
+import json
+import math
+import os
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
-from timm.data.loader import MultiEpochsDataLoader
-from dp.util.args import InferenceConfig, ExperimentConfig
+
 # from dp.dataset.dataset import SequenceDataset
 import tyro
-from dp.dataset.utils import default_vision_transform as transforms_noaug_train
-from pathlib import Path
 import yaml
-import matplotlib.pyplot as plt
-import os
-import json
-from dp.dataset.utils import unscale_action
-import numpy as np
-from dp.policy.diffusion_wrapper import DiffusionWrapper
-from dp.dataset.image_dataset_v2 import SequenceDataset, VideoSampler, CollateFunction
-from dp.policy.model import Dinov2DiscretePolicy
+from timm.data.loader import MultiEpochsDataLoader
 from transformers import AutoProcessor
-import math
-from typing import Optional, List, Dict, Tuple
+
+from dp.dataset.image_dataset_v2 import CollateFunction, SequenceDataset, VideoSampler
+from dp.dataset.utils import default_vision_transform as transforms_noaug_train
+from dp.dataset.utils import unscale_action
+from dp.policy.diffusion_wrapper import DiffusionWrapper
+from dp.policy.model import Dinov2DiscretePolicy
+from dp.util.args import ExperimentConfig, InferenceConfig
+
 
 def _load_action_stats(stats_path: Optional[str]) -> Optional[Dict]:
     """Load action min/max (or q01/q99) for y-limits if available."""
@@ -230,7 +234,7 @@ if __name__ == '__main__':
             gt_action = nbatch['action']
             # Use action_mask to get valid tokens for each sequence
             valid_actions = []
-            for seq_actions, seq_mask in zip(gt_action, nbatch['action_mask']):
+            for seq_actions, seq_mask in zip(gt_action, nbatch['action_mask'], strict=False):
                 # Get only the valid tokens including EOS using the mask
                 valid_seq = seq_actions[seq_mask].tolist()
                 valid_actions.append(valid_seq[:-1]) # remove EOS
