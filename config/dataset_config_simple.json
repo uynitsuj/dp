@@ -1,0 +1,16 @@
+{
+    "dataset_path": [
+        "/home/mfu/icrl_data/simple_test/r2d2.hdf5" 
+    ],
+    "hdf5_keys": [
+        "/home/mfu/icrl_data/simple_test/hdf5_keys.json"
+    ],
+    "dataset_statistics" : "config/action_statistics.json",
+    "epi_len_mapping_json": "config/data_config/icrt_mt/epi_len_mapping.json",
+    "verb_to_episode": "config/data_config/icrt_mt/verb_to_episode.json",
+    "task_grouping" : "config/data_config/icrt_mt/task_grouping.json",
+    "action_keys": ["action/cartesian_position", "action/gripper_position"],
+    "image_keys" : ["observation/exterior_image_1_left","observation/wrist_image_left"],
+    "proprio_keys": ["observation/cartesian_position", "observation/gripper_position"],
+    "train_split": 0.95
+}

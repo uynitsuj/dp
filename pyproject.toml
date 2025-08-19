@@ -1,0 +1,40 @@
+[project]
+name = "dp"
+version = "0.1.0"
+
+dependencies=[
+    "Pillow",
+    "opencv-python",
+    "tqdm", 
+    "tensorboard",
+    "scipy",
+    "timm",
+    "matplotlib", 
+    "tyro", 
+    "loralib",
+    "h5py",
+    "wandb",
+    "mediapy",
+    "lerobot==0.3.3",
+    # "kinpy",
+    #"torch==2.5.1",
+    #"torchvision==0.20.1", 
+    #"diffusers==0.18.2", 
+    "scikit-image", 
+    "scikit-video==1.1.11", 
+    "zarr", 
+    #"numcodecs==0.10.2", 
+    #"pygame==2.1.2", 
+    "pymunk", 
+    "gym==0.26.2", 
+    "shapely",
+    "nvidia-dali-cuda120",
+    "av",
+    #"transformers==4.48.2", 
+    "s2wrapper@git+https://github.com/bfshi/scaling_on_scales.git", 
+    "peft"
+]
+
+requires-python= ">=3.10"
+[tool.setuptools.packages.find]
+include = ["dp"]
