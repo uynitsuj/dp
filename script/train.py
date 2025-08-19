@@ -27,6 +27,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader 
 from torch.utils.tensorboard import SummaryWriter
 from dp.util.misc import MultiEpochsDataLoader
+from tqdm import tqdm
 
 def main(args : ExperimentConfig):
     # spawn is needed to initialize vision augmentation within pytorch workers
@@ -209,7 +210,7 @@ def main(args : ExperimentConfig):
     else:
         ema = None
 
-    for epoch_idx in range(start_epoch, num_epochs):
+    for epoch_idx in tqdm(range(start_epoch, num_epochs), leave=True, desc="Training"):
         train_stats = train_one_epoch(
             model=model, data_loader=dataloader_train, 
             optimizer=optimizer, lr_scheduler=lr_scheduler,
