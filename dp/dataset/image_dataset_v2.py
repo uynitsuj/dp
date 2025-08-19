@@ -15,6 +15,7 @@ from transformers import AutoProcessor
 
 from dp.util.args import DatasetConfig, SharedConfig, LoggingConfig
 from .utils import quat_to_rot_6d, quat_to_euler, euler_to_quat, convert_multi_step_np, convert_delta_action, scale_action
+import h5py
 
 class CollateFunction:
     def __init__(
@@ -160,13 +161,13 @@ def collate_fn_lambda(
     return collated
 
 class SequenceDataset(Dataset):
-    action_key : str = "action/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
-    proprio_key : str = "state/cartesian/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
-    joint_key : str = "state/joint/joint_angle_rad" # for getting gripper information # (n, 16) dtype('float64')
+    # action_key : str = "action/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
+    # proprio_key : str = "state/cartesian/cartesian_pose" # [LEFT ARM] w, x, y, z, -- x, y, z + [RIGHT ARM] w, x, y, z -- x, y, z
+    # joint_key : str = "state/joint/joint_angle_rad" # for getting gripper information # (n, 16) dtype('float64')
     traj_start_idx : int = 0
-    gripper_width :  int = 0.0226
-    scale_left_gripper : float = 1
-    scale_right_gripper : float = 1
+    # gripper_width :  int = 0.0226
+    # scale_left_gripper : float = 1
+    # scale_right_gripper : float = 1
 
     def __init__(
         self, 
@@ -182,6 +183,7 @@ class SequenceDataset(Dataset):
         self.dataset_root = dataset_config.dataset_root
         self.subsample_steps = dataset_config.subsample_steps
         self.num_cameras = shared_config.num_cameras
+        self.camera_keys = shared_config.camera_keys
         assert os.path.exists(self.dataset_root), f"Dataset root {self.dataset_root} does not exist"
         self.vision_transform = vision_transform
         
@@ -189,8 +191,8 @@ class SequenceDataset(Dataset):
         self.proprio_noise = dataset_config.proprio_noise
 
         # calculate length of dataset 
-        common_path = glob("**/*proprio.zarr", root_dir=self.dataset_root, recursive=True)
-        self.common_path = [os.path.join(self.dataset_root, p.replace("_proprio.zarr", "")) for p in common_path]
+        common_path = glob("**/episode.h5", root_dir=self.dataset_root, recursive=True)
+        self.common_path = [os.path.join(self.dataset_root, p.replace("episode.h5", "")) for p in common_path]
 
         if dataset_config.data_subsample_num_traj > 0:
             self.common_path = self.common_path[:int(dataset_config.data_subsample_num_traj / dataset_config.train_split)]
@@ -270,17 +272,15 @@ class SequenceDataset(Dataset):
         global_min_action, global_max_action = None, None
         good_files = []
         for file in tqdm(self.common_path):
-            left_action, right_action = self.helper_load_action(file, self.traj_start_idx, self.get_traj_length(file) - self.subsample_steps)
-            left_proprio, right_proprio = self.helper_load_proprio(file, self.traj_start_idx, self.get_traj_length(file) - self.subsample_steps, False)
-            left_action = convert_multi_step_np(left_action, self.num_pred_steps)
-            right_action = convert_multi_step_np(right_action, self.num_pred_steps)
-            delta_left_action = convert_delta_action(left_action, left_proprio)
-            delta_right_action = convert_delta_action(right_action, right_proprio)
+            action, proprio = self.helper_load_episode_data(file, self.traj_start_idx, self.get_traj_length(file) - self.subsample_steps)
+            action = convert_multi_step_np(action, self.num_pred_steps)
+            # delta_left_action = convert_delta_action(action, left_proprio)
+            # delta_right_action = convert_delta_action(right_action, right_proprio)
             good_files.append(file)
-            if self.use_delta_action:
-                action = np.concatenate([delta_left_action, delta_right_action], axis=-1)
-            else:
-                action = np.concatenate([left_action, right_action], axis=-1)
+            # if self.use_delta_action:
+            #     action = np.concatenate([delta_left_action, delta_right_action], axis=-1)
+            # else:
+            #     action = np.concatenate([left_action, right_action], axis=-1)
 
             min_action, max_action = action.min((0,1)), action.max((0,1)) # only calculate on the action dim
             if global_min_action is None:
@@ -289,6 +289,7 @@ class SequenceDataset(Dataset):
             else:
                 global_min_action = np.stack([global_min_action, min_action], axis=0).min(0)
                 global_max_action = np.stack([global_max_action, max_action], axis=0).max(0)    
+        
         self.common_path = good_files
         
         if np.all(global_max_action[..., 9] <= 0.01):
@@ -321,77 +322,60 @@ class SequenceDataset(Dataset):
         self, 
         file_path : str,
     ): 
-        action_fp = file_path + "_proprio.zarr" 
-        actions = zarr.load(action_fp)
+        action_fp = file_path + "episode.h5" 
+        actions = h5py.File(action_fp, "r")["action"]
         return len(actions)
     
     # @line_profiler.profile
     def __getitem__(self, idx : int):
         file_path, start, end = self.start_end[idx]
-        left_action, right_action = self.helper_load_action(file_path, start, end)
-        left_proprio, right_proprio = self.helper_load_proprio(file_path, start, start + 1)
+        action, proprio = self.helper_load_episode_data(file_path, start, end)
+        # left_proprio, right_proprio = self.helper_load_proprio(file_path, start, start + 1)
         
-        proprio = np.concatenate([left_proprio, right_proprio], axis=-1) 
+        # proprio = np.concatenate([left_proprio, right_proprio], axis=-1) 
         proprio = torch.from_numpy(proprio)
         # get rid of the time dimension since there's just one step
         proprio = proprio.squeeze(0)
 
-        # get delta actions 
-        if self.use_delta_action:
-            left_action = convert_delta_action(left_action[None, :], left_proprio)
-            right_action = convert_delta_action(right_action[None, :], right_proprio)
-        left_action = torch.from_numpy(left_action)
-        right_action = torch.from_numpy(right_action)
+        # get delta actions  TODO: make data transforms at this stage more extensible
+        # if self.use_delta_action:
+        #     left_action = convert_delta_action(left_action[None, :], left_proprio)
+        #     right_action = convert_delta_action(right_action[None, :], right_proprio)
+        action = torch.from_numpy(action)
+        # right_action = torch.from_numpy(right_action)
 
         # concatenate actions 
-        actions = torch.concatenate([left_action, right_action], dim=-1)
+        # actions = torch.concatenate([left_action, right_action], dim=-1)
 
         # get rid of the time dimension since there's just one step
-        actions = actions.squeeze(0)
+        action = action.squeeze(0)
 
         # option for not scaling 
         if self.enable_scale_action:
-            actions = scale_action(actions, self.stats, type="diffusion") 
+            actions = scale_action(action, self.stats, type="diffusion") 
 
         # remove nans 
         actions = torch.nan_to_num(actions)
             
         # get camera 
-        camera = self.helper_load_camera(file_path, start, end)
+        camera = self.helper_load_camera(self.camera_keys, file_path, start, end)
 
         return {
-            "action" : actions.float(), # num_pred_steps, 20
-            "proprio" : proprio.float(), # 20
+            "action" : actions.float(), # num_pred_steps, 29
+            "proprio" : proprio.float(), # 29
             "observation" : camera.float(), # num_camera, 3, 224, 224
         }
         
-    def helper_load_action(self, file_path : str, start : int, end : int):
+    def helper_load_episode_data(self, file_path : str, start : int, end : int):
         
         # get action path, joint path, and retrieved indices
         indices = np.arange(start + self.subsample_steps, end + self.subsample_steps, self.subsample_steps)
-        action_fp = file_path + "_proprio.zarr"
-        joint_fp = file_path + "_joint.zarr"
+        episode_fp = file_path + "episode.h5"
 
-        # get actions
-        actions = zarr.load(action_fp)[indices]
-        left, right = actions[:, :7], actions[:, 7:]
-        
-        # get gripper
-        joint_data = zarr.load(joint_fp)[indices]
-        left_g = joint_data[:, -1][:, None]
-        right_g = joint_data[:, -2][:, None]
-
-        left = np.concatenate([
-            left[:, 4:],
-            quat_to_rot_6d(left[:, :4]), 
-            left_g * self.scale_left_gripper
-        ], axis=1)
-        right = np.concatenate([
-            right[:, 4:],
-            quat_to_rot_6d(right[:, :4]), 
-            right_g * self.scale_right_gripper
-        ], axis=1)
-        return left, right
+        # get actions and proprio 
+        actions = h5py.File(episode_fp, "r")["action"][indices]
+        proprio = h5py.File(episode_fp, "r")["proprio"][indices]
+        return actions, proprio
 
     def randomize(self, transform : np.ndarray):
         # randomize the transform (N, 7) -> (N, 7)
@@ -404,45 +388,19 @@ class SequenceDataset(Dataset):
         rt = np.concatenate([rot, t], axis=1)
         return rt
 
-    def helper_load_proprio(self, file_path : str, start : int, end : int, noisy : bool = True):
-        indices = np.arange(start, end, self.subsample_steps)
-        proprio_fp = file_path + "_proprio.zarr"
-        joint_fp = file_path + "_joint.zarr"
-        
-        # get proprio data
-        proprio = zarr.load(proprio_fp)[indices]
-        left, right = proprio[:, :7], proprio[:, 7:]
-
-        # get gripper data
-        joint_data = zarr.load(joint_fp)[indices]
-        left_g, right_g = joint_data[:, -1][:, None], joint_data[:, -2][:, None]
-        
-        # add proprio noise 
-        if noisy:
-            left = self.randomize(left)
-            right = self.randomize(right)
-
-        left = np.concatenate([
-            left[:, 4:],
-            quat_to_rot_6d(left[:, :4]), 
-            left_g * self.scale_left_gripper
-        ], axis=1)
-        right = np.concatenate([
-            right[:, 4:],
-            quat_to_rot_6d(right[:, :4]), 
-            right_g * self.scale_right_gripper
-        ], axis=1)
-        return left, right
-
     # @line_profiler.profile
-    def helper_load_camera(self, file_path : str, start : int, end : int):
-        # indices = np.arange(start, end - self.num_pred_steps * self.subsample_steps, self.subsample_steps)
+    def helper_load_camera(self, camera_keys : List[str], file_path : str, start : int, end : int):
+        # image_left_path = file_path + f"_left/{start:04d}.jpg"
+        # image_right_path =  file_path + f"_right/{start:04d}.jpg"
+        # find all folders with jpgs in them
+        image_paths = []
+        for camera_key in camera_keys:
+            image_paths.extend(glob(file_path + f"{camera_key}/{start:06d}.jpg", recursive=True))
         # import pdb; pdb.set_trace()
-        # assert len(indices) == 1, "now we are only retrieving one frame"
-        image_left_path = file_path + f"_left/{start:04d}.jpg"
-        image_right_path =  file_path + f"_right/{start:04d}.jpg"
+        # print(file_path + f"/{camera_key}/{start:04d}.jpg")
+        # print(image_paths)
         camera_observations = []
-        for image_path in [image_left_path, image_right_path]:
+        for image_path in image_paths:
             image = Image.open(image_path)
             image = self.vision_transform(image)
             camera_observations.append(image)

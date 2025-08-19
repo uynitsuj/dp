@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.distributions as D
 from timm.layers import Mlp
 from torch.nn import functional as F
-from dp_gs.util.args import ActionDecoderConfig
+from dp.util.args import ActionDecoderConfig
 from .transformer import TransformerBlock, CrossAttentionBlock
 
 class PredHead(abc.ABC, nn.Module):

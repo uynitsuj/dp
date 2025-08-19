@@ -1,0 +1,234 @@
+_wandb:
+    value:
+        cli_version: 0.21.1
+        e:
+            zn6kcn9l6bfelv433ipk0oy41cbz8woi:
+                args:
+                    - --dataset-cfg.dataset-root
+                    - /home/justinyu/dp/data/lerobot2dp/uynitsuj/overfit_soup_can_data_20250818
+                    - --logging-cfg.log-name
+                    - "250818_1108"
+                    - --logging-cfg.output-dir
+                    - /nfs_us/justinyu/dp
+                    - --shared-cfg.num-pred-steps
+                    - "30"
+                    - --trainer-cfg.epochs
+                    - "300"
+                codePath: script/train.py
+                codePathLocal: script/train.py
+                cpu_count: 16
+                cpu_count_logical: 32
+                cudaVersion: "12.8"
+                disk:
+                    /:
+                        total: "1966736678912"
+                        used: "1020540878848"
+                email: yujustin8@gmail.com
+                executable: /home/justinyu/dp/.venv/bin/python3
+                git:
+                    commit: 0c2d6cb9b761164fcc851f5e3d93ce30e921512d
+                    remote: https://github.com/uynitsuj/dp.git
+                gpu: NVIDIA GeForce RTX 5090
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Blackwell
+                      cudaCores: 21760
+                      memoryTotal: "34190917632"
+                      name: NVIDIA GeForce RTX 5090
+                      uuid: GPU-c5393bcd-14c1-4408-9d7c-03c7fa8f3f63
+                host: harmony
+                memory:
+                    total: "98654814208"
+                os: Linux-6.14.0-27-generic-x86_64-with-glibc2.39
+                program: /home/justinyu/dp/script/train.py
+                python: CPython 3.11.13
+                root: /home/justinyu/dp
+                startedAt: "2025-08-19T06:51:22.353694Z"
+                writerId: zn6kcn9l6bfelv433ipk0oy41cbz8woi
+        m: []
+        python_version: 3.11.13
+        t:
+            "1":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 63
+                - 71
+                - 83
+                - 98
+            "2":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 63
+                - 71
+                - 83
+                - 98
+            "3":
+                - 13
+                - 16
+                - 35
+            "4": 3.11.13
+            "5": 0.21.1
+            "6": 4.55.2
+            "12": 0.21.1
+            "13": linux-x86_64
+dataset_cfg:
+    value:
+        action_noise: 0
+        action_statistics: null
+        balance_data: false
+        data_subsample_num_traj: -1
+        data_subsample_ratio: -1
+        dataset_fraction: 1
+        dataset_json: null
+        dataset_root: /home/justinyu/dp/data/lerobot2dp/uynitsuj/overfit_soup_can_data_20250818
+        goal_conditioned: false
+        is_sim_data: false
+        neg_prompt: false
+        non_overlapping: false
+        num_repeat_traj: 1
+        num_weighted_steps: 30
+        proprio_noise: 0
+        rebalance_tasks: false
+        scale_action: true
+        shuffle_repeat_traj: false
+        skip_step: false
+        sort_by_lang: false
+        subsample_steps: 1
+        task_barrier: false
+        task_names: null
+        train_split: 0.95
+        vision_aug: true
+device:
+    value: cuda
+dist_on_itp:
+    value: false
+dist_url:
+    value: env://
+distributed:
+    value: false
+load_config:
+    value: null
+local_rank:
+    value: -1
+logging_cfg:
+    value:
+        log_dir: /nfs_us/justinyu/dp/250818_1108
+        log_name: "250818_1108"
+        output_dir: /nfs_us/justinyu/dp/250818_1108
+model_cfg:
+    value:
+        action_decoder_cfg:
+            attention_probs_dropout_prob: 0
+            hidden_dropout_prob: 0
+            hidden_size: 1024
+            intermediate_size: 4096
+            max_position_embeddings: 512
+            num_attention_heads: 16
+            num_hidden_layers: 12
+        policy_cfg:
+            action_as_input: true
+            adapter_mlp_ratio: 4
+            adapter_num_heads: 8
+            camera_pos_emb: false
+            compile: false
+            decoder_pred_head: diffusion
+            diffusion_model_type: transformer
+            down_dims:
+                - 256
+                - 512
+                - 1024
+            gripper_loss_w: 1
+            kl_div_loss: false
+            llama_ckpt_dir: /home/mfu/checkpoints/llama-2/llama-2-7b
+            load_llama: true
+            lora_layer_idxs: null
+            lora_rank: 4
+            lora_rank_vision_encoder: 0
+            loss_w_action: 1
+            modality_pos_emb: false
+            multikv_attn_pool: false
+            no_prompt_loss: true
+            num_inference_diffusion_steps: 100
+            num_train_diffusion_steps: 100
+            only_vision: false
+            phase: pretrain
+            pred_action_only: true
+            pred_left_only: false
+            pred_right_only: false
+            pretrained_path: null
+            remove_proprio: false
+            scale_loss: 1
+            scratch_llama_config: null
+            separate_camera_adapter: true
+            simple_attention_pooling: false
+            simple_vision_model: resnet
+            step_weight: 1
+            timm_vision_encoder: null
+            transformer_causal_attn: true
+            transformer_n_cond_layers: 0
+            transformer_n_emb: 256
+            transformer_n_head: 4
+            transformer_n_layer: 8
+            transformer_obs_as_cond: true
+            transformer_p_drop_attn: 0.3
+            transformer_p_drop_emb: 0
+            transformer_time_as_cond: true
+        policy_type: diffusion
+        pref_cfg:
+            beta: 0.1
+            enable: false
+            label_smoothing: 0
+            loss_type: l1
+            opt_algo: dpo
+            ref_policy_path: null
+            reference_free: false
+            sigma: 0.01
+            w_regress_loss: 1
+        vision_encoder_cfg:
+            vision_encoder: vit_base_patch16_224.mae
+            vision_lora: false
+            vision_lora_rank: 8
+            vision_nonpretrained: false
+            vision_unfreeze_all: false
+            vision_unfreeze_last_n: 0
+optimizer_cfg:
+    value:
+        blr: 0.001
+        lr: 0.0001
+        min_lr: 0
+        warmup_epochs: 40
+        weight_decay: 0.01
+shared_cfg:
+    value:
+        batch_size: 32
+        image_size: 224
+        num_cameras: 3
+        num_pred_steps: 30
+        num_stages: 1
+        num_tokens: 108
+        resume: null
+        rot_6d: true
+        s2: false
+        save_every: 5
+        scale_action: null
+        seed: 0
+        seq_length: 1
+        split_epoch: 1
+        start_epoch: 0
+        use_delta_action: false
+train:
+    value: true
+trainer_cfg:
+    value:
+        accum_iter: 1
+        augment_with_gpu: false
+        epochs: 300
+        num_augmentation_workers: 20
+        num_workers: 20
+        pin_memory: true
+world_size:
+    value: 1

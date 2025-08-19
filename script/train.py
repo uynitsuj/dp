@@ -1,5 +1,5 @@
-#  CUDA_VISIBLE_DEVICES=4,5,6,7 --main_process_port=12547 accelerate launch script/train.py --dataset-cfg.dataset-root /home/mfu/dataset/dp_gs/transfer_tiger_241204 --logging-cfg.log-name 241211_1403 --logging-cfg.output-dir /shared/projects/icrl/dp_outputs --shared-cfg.no-use-delta-action --shared-cfg.seq-length 4 --shared-cfg.num-pred-steps 16 --dataset-cfg.subsample-steps 4 --trainer-cfg.epochs 300
-# from dp_gs.dataset.dataset import SequenceDataset
+#  CUDA_VISIBLE_DEVICES=4,5,6,7 --main_process_port=12547 accelerate launch script/train.py --dataset-cfg.dataset-root /home/mfu/dataset/dp/transfer_tiger_241204 --logging-cfg.log-name 241211_1403 --logging-cfg.output-dir /shared/projects/icrl/dp_outputs --shared-cfg.no-use-delta-action --shared-cfg.seq-length 4 --shared-cfg.num-pred-steps 16 --dataset-cfg.subsample-steps 4 --trainer-cfg.epochs 300
+# from dp.dataset.dataset import SequenceDataset
 # from timm.data.loader import MultiEpochsDataLoader
 import numpy as np
 import os 
@@ -9,24 +9,24 @@ import tyro
 import wandb
 import yaml
 import json
-import dp_gs.util.misc as misc
+import dp.util.misc as misc
 from typing import Optional
 
 from diffusers.optimization import get_scheduler
 from transformers import AutoProcessor
-from dp_gs.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
-from dp_gs.dataset.image_dataset import SequenceDataset, VideoSampler, CollateFunction
-from dp_gs.dataset.utils import default_vision_transform, aug_vision_transform
-from dp_gs.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
-from dp_gs.util.args import ExperimentConfig
-from dp_gs.util.misc import NativeScalerWithGradNormCount as NativeScaler
-from dp_gs.util.engine import train_one_epoch
-from dp_gs.util.ema import ModelEMA
+from dp.dataset.image_dataset_sim import SequenceDataset as SimSequenceDataset
+from dp.dataset.image_dataset_v2 import SequenceDataset, VideoSampler, CollateFunction
+from dp.dataset.utils import default_vision_transform, aug_vision_transform
+from dp.policy.model import DiffusionPolicy, SimplePolicy, Dinov2DiscretePolicy
+from dp.util.args import ExperimentConfig
+from dp.util.misc import NativeScalerWithGradNormCount as NativeScaler
+from dp.util.engine import train_one_epoch
+from dp.util.ema import ModelEMA
 
 from pathlib import Path
 from torch.utils.data import DataLoader 
 from torch.utils.tensorboard import SummaryWriter
-from dp_gs.util.misc import MultiEpochsDataLoader
+from dp.util.misc import MultiEpochsDataLoader
 
 def main(args : ExperimentConfig):
     # spawn is needed to initialize vision augmentation within pytorch workers
@@ -173,7 +173,9 @@ def main(args : ExperimentConfig):
 
     # Start a wandb run with `sync_tensorboard=True`
     if global_rank == 0 and args.logging_cfg.log_name is not None:
-        wandb.init(entity="project_vit", project="dp_gs", config=args, name=args.logging_cfg.log_name, sync_tensorboard=True)
+        # wandb.init(entity="diffusion_policy", project="dp", config=args, name=args.logging_cfg.log_name, sync_tensorboard=True)
+        wandb.init(project="dp", config=args, name=args.logging_cfg.log_name, sync_tensorboard=True)
+
 
     # SummaryWrite
     if global_rank == 0 and args.logging_cfg.log_dir is not None:

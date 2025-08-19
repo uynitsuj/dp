@@ -6,8 +6,8 @@ import torch
 import torch.nn as nn
 from . import misc
 
-from dp_gs.util.args import ExperimentConfig
-from dp_gs.policy.model import SimplePolicy, DiffusionPolicy
+from dp.util.args import ExperimentConfig
+from dp.policy.model import SimplePolicy, DiffusionPolicy
 
 def train_one_epoch(model: Union[SimplePolicy, DiffusionPolicy], data_loader: Iterable, 
                     optimizer: torch.optim.Optimizer, lr_scheduler : torch.optim.lr_scheduler,

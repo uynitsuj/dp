@@ -4,16 +4,16 @@ import torch.nn as nn
 import torchvision
 from typing import Callable
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
-from dp_gs.policy.utils import ConditionalUnet1D
+from dp.policy.utils import ConditionalUnet1D
 import torch.nn.functional as F
-from dp_gs.util.args import ModelConfig, SharedConfig
+from dp.util.args import ModelConfig, SharedConfig
 from s2wrapper import forward as multiscale_forward
 import timm
 import torch.nn.functional as F
-from dp_gs.policy.action_head import DiscreteActionDecoder
-from dp_gs.util.args import ActionDecoderConfig
+from dp.policy.action_head import DiscreteActionDecoder
+from dp.util.args import ActionDecoderConfig
 from peft import LoraConfig, get_peft_model
-from dp_gs.policy.transformer_for_diffusion import TransformerForDiffusion
+from dp.policy.transformer_for_diffusion import TransformerForDiffusion
 
 def count_parameters(model, trainable_only=False):
     if trainable_only:

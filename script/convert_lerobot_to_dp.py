@@ -217,7 +217,7 @@ def convert_dataset_parallel(repo_id: str, output_dir: str, num_workers: int = 4
 class Args:
     repo_id: str = "uynitsuj/overfit_soup_can_data_20250818"
     output_dir: str = "data/lerobot2dp"
-    num_workers: int = 0
+    num_workers: int = 4
     overwrite: bool = True
 
 

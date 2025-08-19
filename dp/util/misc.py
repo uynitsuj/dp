@@ -23,7 +23,7 @@ import torch.utils.data
 import torch.distributed as dist
 from torch import inf
 import numpy as np
-from dp_gs.util.args import ExperimentConfig
+from dp.util.args import ExperimentConfig
 
 def load_state_dict_flexible(model, state_dict, return_msg=False):
     """

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal, Optional, Tuple, Union, List
 import enum
 import pathlib
 
@@ -44,7 +44,7 @@ class DatasetConfig:
     skip_step : bool = False
 
     # variance of the noise added to proprioception
-    proprio_noise : float = 0.003
+    proprio_noise : float = 0.0
 
     # variance of the noise added to action 
     action_noise : float = 0.0
@@ -168,7 +168,7 @@ class PolicyConfig:
     no_prompt_loss : bool = True
 
     # Prediction head, can be one of "mlp", "gmm", "diffusion"
-    decoder_pred_head : Literal["mlp", "gmm", "diffusion", "discrete"] = "mlp"
+    decoder_pred_head : Literal["mlp", "gmm", "diffusion", "discrete"] = "diffusion"
 
     # use kl div loss
     kl_div_loss : bool = False
@@ -198,7 +198,7 @@ class PolicyConfig:
     compile : bool = False
     
     # diffusion model type: "unet" or "transformer"
-    diffusion_model_type : Literal["unet", "transformer"] = "unet"
+    diffusion_model_type : Literal["unet", "transformer"] = "transformer"
     
     # transformer specific parameters
     transformer_n_layer : int = 8
@@ -329,13 +329,13 @@ class TrainerConfig:
 @dataclasses.dataclass
 class SharedConfig:
     # Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus
-    batch_size : int = 64
+    batch_size : int = 32
 
     # Use 6DoF Rotation 
     rot_6d : bool = True 
 
     # number of frames in a sequence 
-    seq_length : int = 4
+    seq_length : int = 1
 
     # seed for random number generators
     seed : int = 0
@@ -356,13 +356,16 @@ class SharedConfig:
     split_epoch : int = 1 
 
     # Number of cameras 
-    num_cameras : int = 2 
+    num_cameras : int = 3
 
     # Number of predicted action steps 
-    num_pred_steps : int = 16
+    num_pred_steps : int = 30
     
     # use delta action
-    use_delta_action : bool = True
+    use_delta_action : bool = False
+
+    # camera keys 
+    camera_keys : List[str] = dataclasses.field(default_factory=lambda: ["left_camera-images-rgb", "right_camera-images-rgb", "top_camera-images-rgb"])
 
     # scale action with calculated action statistics (json file)
     scale_action : Optional[str] = None

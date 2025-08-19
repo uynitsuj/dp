@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from typing import Optional, Tuple
-from dp_gs.util.args import ActionDecoderConfig
+from dp.util.args import ActionDecoderConfig
 
 class RotaryPositionalEmbedding(nn.Module):
     def __init__(self, dim: int, max_seq_len: int):
