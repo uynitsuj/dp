@@ -205,7 +205,7 @@ class DeltaActions(DataTransformFn):
     mask: Sequence[bool] | None
     # use_actions_as_state: bool = False # Used when proprio state may contain partial delta rather than absolute states
 
-    def __call__(self, data):
+    def __call__(self, data): #TODO: fix this
         if "actions" not in data or self.mask is None:
             return data
 
@@ -231,7 +231,7 @@ class AbsoluteActions(DataTransformFn):
     # See `make_bool_mask` for more details.
     mask: Sequence[bool] | None
 
-    def __call__(self, data):
+    def __call__(self, data): #TODO: fix this
         if "actions" not in data or self.mask is None:
             return data
 
@@ -354,7 +354,7 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
         mask = np.asarray(self.mask)
         dims = mask.shape[-1]
         actions[..., :dims] += np.expand_dims(np.where(mask, state[..., :dims], 0), axis=-2)
-        data[action_key] = actions
+        data["action"] = actions
 
         return data
 

@@ -49,7 +49,7 @@ class LeRobotXmiRbyDatasetConfig(LeRobotDatasetConfigFactory):
     
     # If provided, will be injected into the input data if the "prompt" key is not present.
     # default_prompt: str | None = None
-    retarget_mode: Literal["20D-relative", "20D-intergripper-relative", "29D-relative", "29D-intergripper-relative"] = "29D-relative"
+    retarget_mode: Literal["20D-relative", "20D-intergripper-relative", "29D-relative", "29D-intergripper-relative"] = "29D-intergripper-relative"
     use_top_camera: bool = True
     
     @override
@@ -264,7 +264,7 @@ _CONFIGS = [
             # repo_id="uynitsuj/overfit_soup_can_data_20250818",
             # default_prompt="pick up the soup can and place it in the bin",
 
-            retarget_mode="29D-relative",
+            retarget_mode="29D-intergripper-relative",
             use_top_camera=True,
         ),
 

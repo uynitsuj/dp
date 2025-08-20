@@ -1,4 +1,6 @@
 # CUDA_VISIBLE_DEVICES=0 python script/inference.py --model_ckpt_folder /shared/projects/icrl/dp_outputs/250208_1027 --ckpt_id 50
+from dataclasses import replace
+import dataclasses
 import json
 import math
 import os
@@ -20,7 +22,7 @@ from dp.dataset.utils import default_vision_transform as transforms_noaug_train
 from dp.dataset.utils import unscale_action
 from dp.policy.diffusion_wrapper import DiffusionWrapper
 from dp.policy.model import Dinov2DiscretePolicy
-from dp.util.args import InferenceConfig
+from dp.util.args import InferenceConfig, DatasetConfig
 from dp.util.config import TrainConfig
 
 
@@ -158,12 +160,12 @@ def _plot_error_heatmap(
 @dataclasses.dataclass
 class InferenceConfig:
     # path to model checkpoint
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/dp_xmi_rby_soup_can_intergripper_29D_20250819_161237"
-    ckpt_id : int = 15
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/dp_xmi_rby_soup_can_intergripper_29D_20250819_170620"
+    ckpt_id : int = 5
 
 def main(inference_config: InferenceConfig):
     # parsing args 
-    args = tyro.cli(inference_config)
+    args = inference_config
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -178,8 +180,11 @@ def main(inference_config: InferenceConfig):
 
     vision_transform = transforms_noaug_train(resolution=resolution) # default img_size: Union[int, Tuple[int, int]] = 224,
 
-    train_args.dataset_cfg.action_statistics = os.path.join(args.model_ckpt_folder, 'action_statistics.json')
-    train_args.shared_cfg.batch_size = 1 
+    # import pdb; pdb.set_trace()
+
+    # train_args.dataset_cfg.action_statistics = os.path.join(args.model_ckpt_folder, 'action_statistics.json')
+    train_args = replace(train_args, dataset_cfg=replace(train_args.dataset_cfg, action_statistics=os.path.join(args.model_ckpt_folder, 'action_statistics.json')), shared_cfg=replace(train_args.shared_cfg, batch_size=1))
+    # train_args.shared_cfg.batch_size = 1 
 
     # dataset_train = SimSequenceDataset(
     #     dataset_config=train_args.dataset_cfg,
@@ -189,6 +194,11 @@ def main(inference_config: InferenceConfig):
     #     split="train",
     #     debug=False,
     # )
+    if type(train_args.dataset_cfg) is DatasetConfig and train_args.dataset_cfg.dataset_root is None:
+        raise ValueError("Dataset root directory is not set")
+    else:
+        train_args = replace(train_args, dataset_cfg=train_args.dataset_cfg.create())
+
     dataset_train = SequenceDataset(
         dataset_config=train_args.dataset_cfg,
         shared_config=train_args.shared_cfg,
