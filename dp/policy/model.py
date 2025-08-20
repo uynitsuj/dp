@@ -14,7 +14,7 @@ from dp.policy.action_head import DiscreteActionDecoder
 from dp.policy.transformer_for_diffusion import TransformerForDiffusion
 from dp.policy.utils import ConditionalUnet1D
 from dp.util.args import ModelConfig, SharedConfig
-
+from dp.policy.vision.dinov3 import Dinov3ImageBranch
 
 def count_parameters(model, trainable_only=False):
     if trainable_only:
@@ -284,11 +284,11 @@ class SimplePolicy(nn.Module):
         
         # calculate loss 
         loss = nn.functional.l1_loss(pred_action, naction, reduction="none")
-        if self.pred_left_only or self.pred_right_only:
-            loss[:, :, -1] *= self.gripper_loss_w
-        else:
-            loss[:, :, -1] *= self.gripper_loss_w
-            loss[:, :, self.action_dim // 2 - 1] *= self.gripper_loss_w
+        # if self.pred_left_only or self.pred_right_only:
+        #     loss[:, :, -1] *= self.gripper_loss_w
+        # else:
+        #     loss[:, :, -1] *= self.gripper_loss_w
+        #     loss[:, :, self.action_dim // 2 - 1] *= self.gripper_loss_w
         loss = loss.mean()
         return loss
         
@@ -538,10 +538,11 @@ class DiffusionPolicy(nn.Module):
         self.num_cameras = shared_cfg.num_cameras
         self.s2 = shared_cfg.s2 # https://github.com/bfshi/scaling_on_scales
         self.timm_vision_encoder = model_cfg.policy_cfg.timm_vision_encoder
+        self.vision_encoder_pretrained_type = model_cfg.policy_cfg.vision_encoder_pretrained_type
         self.lora_rank_vision_encoder = model_cfg.policy_cfg.lora_rank_vision_encoder
         self.diffusion_model_type = model_cfg.policy_cfg.diffusion_model_type
         self.gripper_loss_w = model_cfg.policy_cfg.gripper_loss_w
-        print("gripper_loss_w: ", self.gripper_loss_w)
+        # print("gripper_loss_w: ", self.gripper_loss_w)
 
         if self.timm_vision_encoder is not None:
             assert not self.s2, "Scaling on scale is not supported for timm vision encoder for now."
@@ -551,7 +552,7 @@ class DiffusionPolicy(nn.Module):
                 num_classes=0,
                 global_pool="token",
             )
-            # freeze dino except the final attention pool and fc_norm
+            # freeze except the final attention pool and fc_norm
             for param in self.vision_encoder.parameters():
                 param.requires_grad = False
             self.vision_feature_dim = self.vision_encoder.embed_dim
@@ -564,8 +565,20 @@ class DiffusionPolicy(nn.Module):
                     target_modules=["qkv"]
                 )
                 self.vision_encoder = get_peft_model(self.vision_encoder, lora_config)
+
+        elif self.vision_encoder_pretrained_type == "dinov3":
+            assert not self.s2, "Scaling on scale is not supported for dinov3 for now."
+            self.vision_encoder = Dinov3ImageBranch(
+                model_name="facebook/dinov3-vitb16-pretrain-lvd1689m",
+                crop_size=(200, 200),
+                target_size=(224, 224),
+                num_kp=256,
+                freeze_backbone=True,
+                eval_fixed_crop=False,
+                normalize_images=False,
+            )
         else:
-            # construct ResNet18 encoder
+            # fallback toconstruct ResNet18 encoder
             # if you have multiple camera views, use seperate encoder weights for each view.
             self.vision_encoder = get_resnet('resnet18')
 
@@ -749,7 +762,11 @@ class DiffusionPolicy(nn.Module):
             image_features = image_features.transpose(1, 2).view(batch_size, self.vision_feature_dim, res, res)
             image_features = self.pool(image_features).squeeze()
         else:
+            # pre flatten shape [128, 1, 3, 3, 224, 224] resnet example 128 batch size
+            # post flatten shape [384, 3, 224, 224] resnet example 128 batch size
             image_features = self.vision_encoder(nimage.flatten(end_dim=2)) # to incorporate num_camera dimension
+
+            # image_features.shape [384, 512] resnet example 128 batch size
         # convert first to (B, obs_horizon, self.num_cameras, D) then flatten to (B, obs_horizon, self.num_cameras * D)
         image_features = image_features.reshape(*nimage.shape[:3],-1).reshape(*nimage.shape[:2],-1)
 
