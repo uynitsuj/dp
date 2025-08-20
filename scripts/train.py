@@ -53,11 +53,9 @@ def main(args : _config.TrainConfig):
     num_epochs = args.trainer_cfg.epochs
 
     log_name = args.exp_name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-    args = replace(args, logging_cfg=replace(args.logging_cfg, log_name=log_name))
-    args = replace(args, logging_cfg=replace(args.logging_cfg, log_dir=os.path.join(args.logging_cfg.output_dir, log_name)))
+    args = replace(args, logging_cfg=replace(args.logging_cfg, log_name=log_name, output_dir=os.path.join(args.logging_cfg.output_dir, log_name), log_dir=os.path.join(args.logging_cfg.output_dir, log_name)))
 
     os.makedirs(args.logging_cfg.output_dir, exist_ok=True)
-    os.makedirs(os.path.join(args.logging_cfg.output_dir, log_name), exist_ok=True)
 
     device = torch.device(args.device)
 
@@ -265,7 +263,7 @@ def main(args : _config.TrainConfig):
             }
             if ema is not None:
                 save_dict['ema'] = ema.state_dict()
-            torch.save(save_dict, os.path.join(args.logging_cfg.output_dir, log_name, f'checkpoint_{epoch_idx}.pt'))
+            torch.save(save_dict, os.path.join(args.logging_cfg.output_dir, f'checkpoint_{epoch_idx}.pt'))
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch_idx}
@@ -275,7 +273,7 @@ def main(args : _config.TrainConfig):
         if args.logging_cfg.output_dir and misc.is_main_process():
             if log_writer is not None:
                 log_writer.flush()
-            with open(os.path.join(args.logging_cfg.output_dir, log_name, "log.txt"), mode="a", encoding="utf-8") as f:
+            with open(os.path.join(args.logging_cfg.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
 if __name__ == "__main__":
