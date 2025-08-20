@@ -274,7 +274,7 @@ class Bimanual_InterGripperProprio_DeltaActions(DataTransformFn):
             vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[:, 10:16]))), np.asarray(state[:, 16:19])
         )
 
-        if self.action_dim == 29: # TODO FIX THIS IS WRONG LEN IS ALWAYS 32 CUS WE PAD TO 32
+        if self.action_dim == 29:
             top_t0_in_world = vtf.SE3.from_rotation_and_translation(
                 vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[:, 20:26]))), np.asarray(state[:, 26:29])
             )
@@ -317,14 +317,11 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
     action_dim: int
     
     def __call__(self, data):
-        action_key = "actions"
-        if action_key not in data or self.mask is None:
-            action_key = "action"
-            if action_key not in data:
-                return data
+        if "action" not in data or "proprio" not in data or self.mask is None:
+            return data
 
         # action format is [left_6d_rot, left_ee_ik_target_handle_position, left_gripper_pos, right_6d_rot, right_ee_ik_target_handle_position, right_gripper_pos]
-        actions, state = data[action_key][0].cpu().numpy(), data["state"][0, -1, :].cpu().numpy()
+        actions, state = data["action"][0].cpu().numpy(), data["proprio"][0].cpu().numpy()
 
         left_t0_in_right = vtf.SE3.from_rotation_and_translation(
             vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[:6]))[0]), np.asarray(state[6:9])
@@ -340,7 +337,7 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
         state[:6] = torch.from_numpy(left_in_world_6d_rot)
         state[6:9] = torch.from_numpy(left_in_world.wxyz_xyz[..., -3:])
 
-        if self.action_dim == 29: # TODO FIX THIS IS WRONG LEN IS ALWAYS 32 CUS WE PAD TO 32
+        if self.action_dim == 29:
             top_t0_in_right = vtf.SE3.from_rotation_and_translation(
                 vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[20:26]))[0]), np.asarray(state[26:29])
             )
@@ -349,12 +346,10 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
             state[20:26] = torch.from_numpy(top_in_world_6d_rot)
             state[26:29] = torch.from_numpy(top_in_world.wxyz_xyz[..., -3:])
 
-
         # viser_server.scene.add_frame(f"left_t0_in_world", position=left_t0_in_world.wxyz_xyz[-3:], wxyz=left_t0_in_world.wxyz_xyz[:4])
         # viser_server.scene.add_frame(f"right_t0_in_world", position=right_t0_in_world.wxyz_xyz[-3:], wxyz=right_t0_in_world.wxyz_xyz[:4])
         # viser_server.scene.add_frame(f"right_t0_state_in_world", position=right_t0_state_in_world.wxyz_xyz[-3:], wxyz=right_t0_state_in_world.wxyz_xyz[:4])
         # viser_server.scene.add_frame(f"right_t0_in_world/left_in_right", position=left_in_right.wxyz_xyz[-3:], wxyz=left_in_right.wxyz_xyz[:4])
-
 
         mask = np.asarray(self.mask)
         dims = mask.shape[-1]
