@@ -275,7 +275,6 @@ class Dinov3ImageBranch(nn.Module):
             feat = self.backbone(x)
         return self.pool(feat)            # (B, pooled_dim)
 
-
 # --------------------- main dict encoder ---------------------
 
 class Dinov3ObsEncoder(nn.Module):

@@ -20,7 +20,7 @@ uv pip install submodules/transformers[torch] # Requires transformers nightly fo
 ```
 
 ## Defining training configs and running training
-To fine-tune a model on your own data, you need to define configs for data processing and training. Example [configs](dp/util/config.py) are provided, starting from standard format lerobot dataset, which you can modify and add interfaces for your own dataset format.
+To fine-tune a model on your own data, you need to define configs for data processing and training. Example [configs](dp/util/config.py) are provided (styled after PhysicalIntelligence/openpi configs), starting from standard format lerobot dataset, which you can modify and add interfaces for your own dataset format.
 
 Dataset normalization statistics are computed and applied to data automatically prior to training.
 
@@ -41,6 +41,6 @@ ruff format # code format
 
 - [x] Make DataConfig a ConfigFactory so that it's more extensible to different data formats
 - [x] Make lerobot datasets an acceptable input dataset format (no need to write a new dataloader, just convert and cache data mp4->jpg and paraquet->hdf5 prior to train)
-- [ ] Add DINOv3 (and/or SigLip) ViT option
+- [x] Add DINOv3 ViT option for Diffusion Policy
 - [ ] Develop remote inference wrapper
 - [ ] Currently dataloader is hardcoded for single timestep obs, fix this lol

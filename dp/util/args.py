@@ -158,11 +158,11 @@ class PolicyConfig:
     diffusion_model_type : Literal["unet", "transformer"] = "transformer"
     
     # transformer specific parameters
-    transformer_n_layer : int = 8
-    transformer_n_head : int = 4
-    transformer_n_emb : int = 256
-    transformer_p_drop_emb : float = 0.0
-    transformer_p_drop_attn : float = 0.3
+    transformer_n_layer : int = 12
+    transformer_n_head : int = 8
+    transformer_n_emb : int = 512
+    transformer_p_drop_emb : float = 0.1
+    transformer_p_drop_attn : float = 0.2
     transformer_causal_attn : bool = True
     transformer_time_as_cond : bool = True
     transformer_obs_as_cond : bool = True
