@@ -233,7 +233,6 @@ class Dinov3ImageBranch(nn.Module):
         model_name: str,
         crop_size,
         target_size,
-        num_kp: int,              # unused now; kept for ctor compatibility
         freeze_backbone: bool,
         eval_fixed_crop: bool,
         normalize_images: bool,

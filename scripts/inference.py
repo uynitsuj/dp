@@ -161,7 +161,7 @@ def _plot_error_heatmap(
 class InferenceConfig:
     # path to model checkpoint
     model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/dp_xmi_rby_soup_can_intergripper_29D_20250819_174130"
-    ckpt_id : int = 60
+    ckpt_id : int = 165
 
 def main(inference_config: InferenceConfig):
     # parsing args 

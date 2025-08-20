@@ -189,7 +189,6 @@ def main(args : _config.TrainConfig):
     if global_rank == 0:# and args.logging_cfg.log_name is not None:
         wandb.init(project="dp", dir = args.logging_cfg.log_dir, config=args, name=log_name, sync_tensorboard=True)
 
-
     # SummaryWrite
     if global_rank == 0 and args.logging_cfg.log_dir is not None:
         os.makedirs(args.logging_cfg.log_dir, exist_ok=True)
