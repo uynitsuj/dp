@@ -20,7 +20,8 @@ from dp.dataset.utils import default_vision_transform as transforms_noaug_train
 from dp.dataset.utils import unscale_action
 from dp.policy.diffusion_wrapper import DiffusionWrapper
 from dp.policy.model import Dinov2DiscretePolicy
-from dp.util.args import ExperimentConfig, InferenceConfig
+from dp.util.args import InferenceConfig
+from dp.util.config import TrainConfig
 
 
 def _load_action_stats(stats_path: Optional[str]) -> Optional[Dict]:
@@ -153,14 +154,21 @@ def _plot_error_heatmap(
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-if __name__ == '__main__':
+
+@dataclasses.dataclass
+class InferenceConfig:
+    # path to model checkpoint
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/dp_xmi_rby_soup_can_intergripper_29D_20250819_161237"
+    ckpt_id : int = 15
+
+def main(inference_config: InferenceConfig):
     # parsing args 
-    args = tyro.cli(InferenceConfig)
+    args = tyro.cli(inference_config)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     train_yaml_path = os.path.join(args.model_ckpt_folder, 'run.yaml')
-    train_args : ExperimentConfig = yaml.load(Path(train_yaml_path).read_text(), Loader=yaml.Loader)
+    train_args : TrainConfig = yaml.load(Path(train_yaml_path).read_text(), Loader=yaml.Loader)
 
     # vision transform
     if train_args.shared_cfg.s2:
@@ -308,3 +316,6 @@ if __name__ == '__main__':
 
         if idx > 10:
             break
+
+if __name__ == "__main__":
+    tyro.cli(main)
