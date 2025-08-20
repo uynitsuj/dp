@@ -14,6 +14,7 @@ from dp.dataset.utils import unscale_action
 from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
 # from dp.util.args import ExperimentConfig
 from dp.util.config import TrainConfig
+from dataclasses import replace
 
 # def load_state_dict_flexible(model, state_dict):
 #     """
@@ -127,6 +128,7 @@ class DiffusionWrapper():
             resolution = args.shared_cfg.image_size * 2
         else:
             resolution = args.shared_cfg.image_size
+        
         self.resolution = resolution
         self.vision_transform = transforms_noaug_train(resolution=resolution)
         # self.validate_model_state()  # Add validation after loading
@@ -145,7 +147,12 @@ class DiffusionWrapper():
             #     clip_sample=True,
             #     prediction_type= self.model.prediction_type)
             # self.noise_scheduler.set_timesteps(self.inference_step)
-    
+
+        # import pdb; pdb.set_trace()
+        args = replace(args, dataset_cfg=args.dataset_cfg.create())
+        self.data_transforms = args.dataset_cfg.data_transforms
+        # import pdb; pdb.set_trace()
+
     def validate_model_state(self):
         """
         Validate model state after loading checkpoint
@@ -264,17 +271,26 @@ class DiffusionWrapper():
                 if self.model.pred_left_only or self.model.pred_right_only:
                     naction = torch.concatenate([naction, naction], dim=-1)
                 naction = unscale_action(naction, stat=self.stats, type='diffusion')
+
+            if self.data_transforms is not None:
+                data_dict = {
+                    "action": naction,
+                    "proprio": nbatch["proprio"],
+                }
+                for tf_fn in self.data_transforms.outputs:
+                    data_dict = tf_fn(data_dict)
+                naction = data_dict["action"]
             
             # Handle left/right prediction
-            if self.model.pred_left_only:
-                proprio_right = nbatch["proprio"][:, -1:, self.model.action_dim:]
-                naction[:, :, self.model.action_dim:] = proprio_right
+            # if self.model.pred_left_only:
+            #     proprio_right = nbatch["proprio"][:, -1:, self.model.action_dim:]
+            #     naction[:, :, self.model.action_dim:] = proprio_right
             
-            if self.model.pred_right_only:
-                proprio_left = nbatch["proprio"][:, -1:, :self.model.action_dim]
-                naction[:, :, :self.model.action_dim] = proprio_left
+            # if self.model.pred_right_only:
+            #     proprio_left = nbatch["proprio"][:, -1:, :self.model.action_dim]
+            #     naction[:, :, :self.model.action_dim] = proprio_left
             
-            naction = naction.detach().to('cpu').numpy()
+            # naction = naction.detach().to('cpu').numpy()
             return naction
 
     def forward_simple(self, nbatch, denormalize=True):

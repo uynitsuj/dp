@@ -321,7 +321,7 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
             return data
 
         # action format is [left_6d_rot, left_ee_ik_target_handle_position, left_gripper_pos, right_6d_rot, right_ee_ik_target_handle_position, right_gripper_pos]
-        actions, state = data["action"][0].cpu().numpy(), data["proprio"][0].cpu().numpy()
+        actions, state = data["action"][0].cpu().numpy(), data["proprio"][0][0].cpu().numpy() # index 0 batch and tstep (current)
 
         left_t0_in_right = vtf.SE3.from_rotation_and_translation(
             vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[:6]))[0]), np.asarray(state[6:9])

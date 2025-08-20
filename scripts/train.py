@@ -174,7 +174,7 @@ def main(args : _config.TrainConfig):
         num_workers=args.trainer_cfg.num_workers,
         collate_fn=collate_fn,
         pin_memory=args.trainer_cfg.pin_memory,
-        prefetch_factor=2,
+        # prefetch_factor=2,
     )
     dataloader_val = MultiEpochsDataLoader(
         dataset_val,
@@ -182,7 +182,7 @@ def main(args : _config.TrainConfig):
         num_workers=args.trainer_cfg.num_workers,
         collate_fn=collate_fn,
         pin_memory=args.trainer_cfg.pin_memory,
-        prefetch_factor=2,
+        # prefetch_factor=2,
     )
 
     # Start a wandb run with `sync_tensorboard=True`

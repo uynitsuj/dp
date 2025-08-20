@@ -536,6 +536,7 @@ class DiffusionPolicy(nn.Module):
         self.pred_left_only = model_cfg.policy_cfg.pred_left_only
         self.pred_right_only = model_cfg.policy_cfg.pred_right_only
         self.num_cameras = shared_cfg.num_cameras
+        self.camera_keys = shared_cfg.camera_keys
         self.s2 = shared_cfg.s2 # https://github.com/bfshi/scaling_on_scales
         self.timm_vision_encoder = model_cfg.policy_cfg.timm_vision_encoder
         self.vision_encoder_pretrained_type = model_cfg.policy_cfg.vision_encoder_pretrained_type
