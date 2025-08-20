@@ -572,7 +572,6 @@ class DiffusionPolicy(nn.Module):
                 model_name="facebook/dinov3-vitb16-pretrain-lvd1689m",
                 crop_size=(200, 200),
                 target_size=(224, 224),
-                # num_kp=256,
                 freeze_backbone=True,
                 eval_fixed_crop=False,
                 normalize_images=False,
@@ -582,7 +581,7 @@ class DiffusionPolicy(nn.Module):
                 lora_config = LoraConfig(
                     r=self.lora_rank_vision_encoder,
                     lora_alpha=self.lora_rank_vision_encoder,
-                    target_modules=["q_proj", "v_proj", "o_proj", "up_proj"]
+                    target_modules=["q_proj", "v_proj", "o_proj", "up_proj", "down_proj"]
                 )
                 self.vision_encoder = get_peft_model(self.vision_encoder, lora_config)
         else:
