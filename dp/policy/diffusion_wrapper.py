@@ -290,7 +290,7 @@ class DiffusionWrapper():
             #     proprio_left = nbatch["proprio"][:, -1:, :self.model.action_dim]
             #     naction[:, :, :self.model.action_dim] = proprio_left
             
-            # naction = naction.detach().to('cpu').numpy()
+            naction = naction.detach().to('cpu').numpy()
             return naction
 
     def forward_simple(self, nbatch, denormalize=True):

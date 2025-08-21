@@ -161,8 +161,8 @@ def _plot_error_heatmap(
 class InferenceConfig:
     # path to model checkpoint
     # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/trying_no_tfs_20250820_170018"
-    ckpt_id : int = 5
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/trying_no_tfs_20250820_172806"
+    ckpt_id : int = 0
 
 def main(inference_config: InferenceConfig):
     # parsing args 
@@ -190,7 +190,7 @@ def main(inference_config: InferenceConfig):
     else:
         train_args = replace(train_args, dataset_cfg=train_args.dataset_cfg.create())
     
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
     dataset_train = SequenceDataset(
         dataset_config=train_args.dataset_cfg,
