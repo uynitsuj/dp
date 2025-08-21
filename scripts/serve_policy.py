@@ -71,6 +71,7 @@ from dp.policy.diffusion_wrapper import DiffusionWrapper
 from dp.policy.model import Dinov2DiscretePolicy
 from dp.dataset.utils import unscale_action
 from transformers import AutoProcessor
+from dp.dataset.utils import default_vision_transform as transforms_noaug_train
 
 logger = logging.getLogger("remote_policy_server")
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s:%(name)s: %(message)s")
@@ -81,8 +82,8 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s:%(na
 # ----------------------------
 @dataclass
 class ServerConfig:
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
-    ckpt_id: int = 180
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/dp_xmi_rby_intergripper_proprio_29D_20250820_dinov3_lora_vision_20250821_031512"
+    ckpt_id: int = 99
     host: str = "0.0.0.0"
     port: int = 8111
     device: str = "cuda"  # "cuda" | "cpu" | "cuda:0" ...
@@ -153,11 +154,19 @@ def repack_obs(obs: Dict[str, Any], camera_keys: Optional[List[str]] = None) -> 
     if camera_keys is not None:
         for key in camera_keys:
             assert key in obs, f"Camera key {key} not found in obs"
-            observation.append(obs[key])
+            # if the range of image values is 0-255, convert to 0-1
+            if obs[key].max() <= 1.0:
+                observation.append(obs[key])
+            else:
+                observation.append(obs[key] / 255.0) # Assumption: if image max value is gt 1, then it's likely in [0, 255]
     else:
         for key in obs:
             if "images" in key:
-                observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
+                # if the range of image values is 0-255, convert to 0-1
+                if obs[key].max() <= 1.0:
+                    observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
+                else:
+                    observation.append(obs[key] / 255.0)
 
     new_obs["observation"] = torch.cat(observation, dim=1).unsqueeze(0)    # (B, T, num_cameras, C, H, W)
     new_obs["proprio"] = obs["state"]
@@ -235,6 +244,8 @@ class _DiffusionWrapperAdapter:
             if hasattr(self._infer.model, "camera_keys"):
                 camera_keys = self._infer.model.camera_keys
             nbatch = repack_obs(nbatch, camera_keys = camera_keys)
+            vision_transform = transforms_noaug_train(resolution=224) # TODO: remove hardcode everywhere eventually and take this from cfg
+            nbatch["observation"] = vision_transform(nbatch["observation"])
             pred_action = self._infer(nbatch)
 
             # Decode or pass-through depending on model type

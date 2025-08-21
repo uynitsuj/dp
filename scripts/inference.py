@@ -134,7 +134,7 @@ def _plot_error_heatmap(
     err_mean = err.mean(axis=0).T  # (D, H) for heatmap
 
     # normalize err_mean per-dim
-    err_mean = err_mean / err_mean.max(axis=1, keepdims=True) + 1e-6 # add small constant to avoid zero division
+    err_mean = err_mean / (err_mean.max(axis=1, keepdims=True) + 1e-6) # add small constant to avoid zero division
 
     if action_names is None:
         action_names = [f"A{i}" for i in range(D)]
@@ -164,8 +164,8 @@ def _plot_error_heatmap(
 class InferenceConfig:
     # path to model checkpoint
     # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
-    # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/test_inter_gripper_proprio_20250820_212712"
-    model_ckpt_folder: str = "/nfs_us/justinyu/dp/absolute_test_20250820_212919"
+    # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/absolute_test_20250820_212919"
+    model_ckpt_folder: str = "/nfs_us/justinyu/dp/dp_xmi_rby_intergripper_proprio_29D_20250820_dinov3_lora_vision_20250821_031512"
     # ckpt_id : int = 0
     ckpt_id : int = 99
 

@@ -268,6 +268,7 @@ class DiffusionWrapper():
 
             # save observation images nbatch["observation"] torch.Size([1, 1, 3, 3, 224, 224]) to file
             # and plot nbatch["proprio"] torch.Size([1, 1, 29]) to file
+            # import pdb; pdb.set_trace()
             import matplotlib.pyplot as plt
             for i in range(nbatch["observation"].shape[1]):
                 for j in range(nbatch["observation"].shape[2]):
