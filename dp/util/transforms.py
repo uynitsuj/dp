@@ -354,7 +354,7 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
         mask = np.asarray(self.mask)
         dims = mask.shape[-1]
         actions[..., :dims] += np.expand_dims(np.where(mask, state[..., :dims], 0), axis=-2)
-        data["action"] = actions
+        data["action"] = actions[None, ...]
 
         return data
 

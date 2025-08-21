@@ -276,7 +276,7 @@ class _DiffusionWrapperAdapter:
             # nbatch["actions"] = actions
 
             # actions_np = actions.detach().to('cpu').numpy()
-            actions_np = actions  # strip batch -> (H,D)
+            actions_np = actions[0]  # strip batch -> (H,D)
 
             return {"actions": actions_np}
 

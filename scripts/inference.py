@@ -160,8 +160,9 @@ def _plot_error_heatmap(
 @dataclasses.dataclass
 class InferenceConfig:
     # path to model checkpoint
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
-    ckpt_id : int = 165
+    # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/trying_no_tfs_20250820_170018"
+    ckpt_id : int = 5
 
 def main(inference_config: InferenceConfig):
     # parsing args 
@@ -188,6 +189,8 @@ def main(inference_config: InferenceConfig):
         raise ValueError("Dataset root directory is not set")
     else:
         train_args = replace(train_args, dataset_cfg=train_args.dataset_cfg.create())
+    
+    import pdb; pdb.set_trace()
 
     dataset_train = SequenceDataset(
         dataset_config=train_args.dataset_cfg,
@@ -256,6 +259,8 @@ def main(inference_config: InferenceConfig):
         #   proprio:    (B, T, D)
         #   pred_action:(B, H, D)
         #   gt_action:  (B, H, D)
+
+        # import pdb; pdb.set_trace()
 
         # Optional y-limits via action statistics (min/max or q01/q99)
         stats_path = getattr(train_args.dataset_cfg, "action_statistics", None)
