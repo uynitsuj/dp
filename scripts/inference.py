@@ -160,10 +160,10 @@ def _plot_error_heatmap(
 @dataclasses.dataclass
 class InferenceConfig:
     # path to model checkpoint
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
-    # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/trying_no_tfs_20250820_172806"
+    # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/test_inter_gripper_proprio_20250820_195515"
     # ckpt_id : int = 0
-    ckpt_id : int = 180
+    ckpt_id : int = 15
 
 def main(inference_config: InferenceConfig):
     # parsing args 

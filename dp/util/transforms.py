@@ -296,7 +296,7 @@ class Bimanual_InterGripperProprio_DeltaActions(DataTransformFn):
         #     # viser_server.scene.add_frame(f"right_t0_state_in_world", position=right_t0_state_in_world.wxyz_xyz[-3:], wxyz=right_t0_state_in_world.wxyz_xyz[:4])
         #     viser_server.scene.add_frame(f"right_t0_in_world/left_in_right", position=left_in_right.wxyz_xyz[i, -3:], wxyz=left_in_right.wxyz_xyz[i, :4])
 
-        # import pdb; pdb.set_trace()
+        #     import pdb; pdb.set_trace()
 
         mask = np.asarray(self.mask)
         dims = mask.shape[-1]
@@ -353,7 +353,7 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
 
         mask = np.asarray(self.mask)
         dims = mask.shape[-1]
-        actions[..., :dims] += np.expand_dims(np.where(mask, data["proprio"][0][0][..., :dims], 0), axis=-2)
+        actions[..., :dims] += np.expand_dims(np.where(mask, state[..., :dims], 0), axis=-2)
         data["action"] = torch.from_numpy(actions[None, ...])
 
         return data
