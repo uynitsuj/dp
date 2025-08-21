@@ -49,7 +49,7 @@ class LeRobotXmiRbyDatasetConfig(LeRobotDatasetConfigFactory):
     
     # If provided, will be injected into the input data if the "prompt" key is not present.
     # default_prompt: str | None = None
-    retarget_mode: Literal["20D-relative", "20D-intergripper-relative", "29D-relative", "29D-intergripper-relative"] = "29D-intergripper-relative"
+    retarget_mode: Literal["20D-relative", "20D-intergripper-relative", "29D-relative", "29D-intergripper-relative", "29D-absolute"] = "29D-intergripper-relative"
     use_top_camera: bool = True
     
     @override
