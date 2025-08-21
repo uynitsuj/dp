@@ -273,6 +273,15 @@ class _DiffusionWrapperAdapter:
             # import pdb; pdb.set_trace()
             # actions = unscale_action(actions, stat=self._stats, type='diffusion')  # (B,H,D)
 
+            # if self._infer.data_transforms is not None:
+            #     data_dict = {
+            #         "action": actions,
+            #         "proprio": nbatch["proprio"],
+            #     }
+            #     for tf_fn in self._infer.data_transforms.outputs:
+            #         data_dict = tf_fn(data_dict)
+            #     actions = data_dict["action"]
+
             # nbatch["actions"] = actions
 
             # actions_np = actions.detach().to('cpu').numpy()

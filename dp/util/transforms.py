@@ -280,14 +280,14 @@ class Bimanual_InterGripperProprio_DeltaActions(DataTransformFn):
             )
             top_in_right = right_t0_in_world.inverse() @ top_t0_in_world
             top_in_right_6d_rot = quat_to_rot_6d(top_in_right.wxyz_xyz[..., :4])
-            state[:, 20:26] = torch.from_numpy(top_in_right_6d_rot)
-            state[:, 26:29] = torch.from_numpy(top_in_right.wxyz_xyz[..., -3:])
+            data["proprio"][:, 20:26] = torch.from_numpy(top_in_right_6d_rot)
+            data["proprio"][:, 26:29] = torch.from_numpy(top_in_right.wxyz_xyz[..., -3:])
 
         left_in_right = right_t0_in_world.inverse() @ left_t0_in_world
         left_in_right_6d_rot = quat_to_rot_6d(left_in_right.wxyz_xyz[..., :4])
 
-        state[:, :6] = torch.from_numpy(left_in_right_6d_rot)
-        state[:, 6:9] = torch.from_numpy(left_in_right.wxyz_xyz[..., -3:])
+        data["proprio"][:, :6] = torch.from_numpy(left_in_right_6d_rot)
+        data["proprio"][:, 6:9] = torch.from_numpy(left_in_right.wxyz_xyz[..., -3:])
 
         # import pdb; pdb.set_trace()
         # for i in range(left_t0_in_world.wxyz_xyz.shape[0]):
@@ -353,8 +353,8 @@ class Bimanual_InterGripperProprio_AbsoluteActions(DataTransformFn):
 
         mask = np.asarray(self.mask)
         dims = mask.shape[-1]
-        actions[..., :dims] += np.expand_dims(np.where(mask, state[..., :dims], 0), axis=-2)
-        data["action"] = actions[None, ...]
+        actions[..., :dims] += np.expand_dims(np.where(mask, data["proprio"][0][0][..., :dims], 0), axis=-2)
+        data["action"] = torch.from_numpy(actions[None, ...])
 
         return data
 

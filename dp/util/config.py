@@ -275,7 +275,7 @@ _CONFIGS = [
             camera_keys = ["left_camera-images-rgb", "right_camera-images-rgb", "top_camera-images-rgb"]
         ),
         trainer_cfg=TrainerConfig(
-            epochs=300,
+            epochs=100,
         ),
         logging_cfg=LoggingConfig(
             output_dir="/nfs_us/justinyu/dp",
