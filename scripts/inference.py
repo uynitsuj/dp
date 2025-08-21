@@ -161,9 +161,9 @@ def _plot_error_heatmap(
 class InferenceConfig:
     # path to model checkpoint
     # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/scaling_dinov3_lora_20250819_235831"
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/test_inter_gripper_proprio_20250820_195515"
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/test_inter_gripper_proprio_20250820_212712"
     # ckpt_id : int = 0
-    ckpt_id : int = 15
+    ckpt_id : int = 70
 
 def main(inference_config: InferenceConfig):
     # parsing args 
@@ -254,6 +254,15 @@ def main(inference_config: InferenceConfig):
             gt_action = nbatch['action'][:,-1]
 
         gt_action = unscale_action(gt_action, stat=inferencer.stats, type='diffusion').detach().to('cpu').numpy()
+
+        if inferencer.data_transforms is not None:
+            data_dict = {
+                "action": torch.from_numpy(gt_action),
+                "proprio": nbatch["proprio"],
+            }
+            for tf_fn in inferencer.data_transforms.outputs:
+                data_dict = tf_fn(data_dict)
+            gt_action = data_dict["action"].detach().to('cpu').numpy()
 
         # -------------------- plotting (refined) --------------------
         # Shapes expected:
