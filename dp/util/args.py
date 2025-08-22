@@ -158,7 +158,7 @@ class PolicyConfig:
     diffusion_model_type : Literal["unet", "transformer", "scale_DP"] = "scale_DP"
     
     # transformer specific parameters
-    transformer_n_layer : int = 32
+    transformer_n_layer : int = 28
     transformer_n_head : int = 16
     transformer_n_emb : int = 1280
     transformer_p_drop_emb : float = 0.1
