@@ -12,6 +12,7 @@ from torch import nn
 
 from dp.policy.action_head import DiscreteActionDecoder
 from dp.policy.transformer_for_diffusion import TransformerForDiffusion
+from dp.policy.scale_transformer_diffusion import ScaleTransformerDiffusionPolicy
 from dp.policy.utils import ConditionalUnet1D
 from dp.util.args import ModelConfig, SharedConfig
 from dp.policy.vision.dinov3 import Dinov3ImageBranch
@@ -575,7 +576,7 @@ class DiffusionPolicy(nn.Module):
                 target_size=(224, 224),
                 freeze_backbone=True,
                 eval_fixed_crop=False,
-                normalize_images=False,
+                normalize_images=False, # normalized outside this wrapper
             )
             if self.lora_rank_vision_encoder > 0:
                 # lora the vision encoder 
@@ -639,7 +640,7 @@ class DiffusionPolicy(nn.Module):
                 down_dims=model_cfg.policy_cfg.down_dims,
                 global_cond_dim=self.global_cond_dim
             )
-        else:
+        elif self.diffusion_model_type == "transformer":
             print("using transformer for diffusion")
             # Transformer-based diffusion model
             self.noise_pred_net = TransformerForDiffusion(
@@ -657,6 +658,20 @@ class DiffusionPolicy(nn.Module):
                 time_as_cond=model_cfg.policy_cfg.transformer_time_as_cond,
                 obs_as_cond=model_cfg.policy_cfg.transformer_obs_as_cond,
                 n_cond_layers=model_cfg.policy_cfg.transformer_n_cond_layers
+            )
+        elif self.diffusion_model_type == "scale_DP":
+            print("using scale_DP for diffusion")
+            self.noise_pred_net = ScaleTransformerDiffusionPolicy(
+                input_dim=self.action_dim,
+                output_dim=self.action_dim,
+                horizon=self.action_horizon,
+                n_obs_steps=self.obs_horizon,
+                cond_dim=obs_dim_t,
+                depth=model_cfg.policy_cfg.transformer_n_layer,
+                n_head=model_cfg.policy_cfg.transformer_n_head,
+                n_emb=model_cfg.policy_cfg.transformer_n_emb,
+                p_drop_emb=model_cfg.policy_cfg.transformer_p_drop_emb,
+                causal_attn=model_cfg.policy_cfg.transformer_causal_attn,
             )
 
     def _process_images(self, nimage: torch.Tensor, vision_transform) -> torch.Tensor:

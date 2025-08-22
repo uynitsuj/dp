@@ -71,10 +71,10 @@ class PolicyConfig:
     timm_vision_encoder : Optional[str] = None  # "vit_base_patch14_dinov2.lvd142m"
 
     # use other vision encoder 
-    vision_encoder_pretrained_type : Optional[str] = None # options: "dinov3"
+    vision_encoder_pretrained_type : Optional[str] = "dinov3" # options: "dinov3"
 
     # lora vision encoder 
-    lora_rank_vision_encoder : int = 0
+    lora_rank_vision_encoder : int = 16
 
     # only vision as input 
     only_vision : bool = False
@@ -155,12 +155,12 @@ class PolicyConfig:
     compile : bool = False
     
     # diffusion model type: "unet" or "transformer"
-    diffusion_model_type : Literal["unet", "transformer"] = "transformer"
+    diffusion_model_type : Literal["unet", "transformer", "scale_DP"] = "scale_DP"
     
     # transformer specific parameters
-    transformer_n_layer : int = 12
-    transformer_n_head : int = 8
-    transformer_n_emb : int = 512
+    transformer_n_layer : int = 32
+    transformer_n_head : int = 16
+    transformer_n_emb : int = 1280
     transformer_p_drop_emb : float = 0.1
     transformer_p_drop_attn : float = 0.2
     transformer_causal_attn : bool = True
