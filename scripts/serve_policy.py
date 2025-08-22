@@ -82,8 +82,8 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s:%(na
 # ----------------------------
 @dataclass
 class ServerConfig:
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/dp_xmi_rby_intergripper_proprio_29D_20250820_dinov3_lora_vision_20250821_031512"
-    ckpt_id: int = 99
+    model_ckpt_folder: str = "/nfs_us/justinyu/dp/intergripper_proprio_test_20250821_140914"
+    ckpt_id: int = 90
     host: str = "0.0.0.0"
     port: int = 8111
     device: str = "cuda"  # "cuda" | "cpu" | "cuda:0" ...
