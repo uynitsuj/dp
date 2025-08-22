@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_machine == 'aarch64' and sys_platform == 'linux'",
@@ -4696,6 +4696,8 @@ requires-dist = [
     { name = "onnxruntime-tools", marker = "extra == 'onnxruntime'", specifier = ">=1.4.2" },
     { name = "openai", marker = "extra == 'serving'", specifier = ">=1.98.0" },
     { name = "opentelemetry-api", marker = "extra == 'open-telemetry'" },
+    { name = "opentelemetry-exporter-otlp", marker = "extra == 'open-telemetry'" },
+    { name = "opentelemetry-sdk", marker = "extra == 'open-telemetry'" },
     { name = "optax", marker = "extra == 'all'", specifier = ">=0.0.8,<=0.1.4" },
     { name = "optax", marker = "extra == 'dev'", specifier = ">=0.0.8,<=0.1.4" },
     { name = "optax", marker = "extra == 'flax'", specifier = ">=0.0.8,<=0.1.4" },
@@ -4906,12 +4908,12 @@ requires-dist = [
     { name = "tokenizers", marker = "extra == 'dev-torch'", specifier = ">=0.21,<0.22" },
     { name = "tokenizers", marker = "extra == 'tokenizers'", specifier = ">=0.21,<0.22" },
     { name = "tokenizers", marker = "extra == 'torchhub'", specifier = ">=0.21,<0.22" },
-    { name = "torch", marker = "extra == 'all'", specifier = ">=2.2" },
-    { name = "torch", marker = "extra == 'dev'", specifier = ">=2.2" },
-    { name = "torch", marker = "extra == 'dev-torch'", specifier = ">=2.2" },
-    { name = "torch", marker = "extra == 'serving'", specifier = ">=2.2" },
-    { name = "torch", marker = "extra == 'torch'", specifier = ">=2.2" },
-    { name = "torch", marker = "extra == 'torchhub'", specifier = ">=2.2" },
+    { name = "torch", marker = "extra == 'all'", specifier = ">=2.1" },
+    { name = "torch", marker = "extra == 'dev'", specifier = ">=2.1" },
+    { name = "torch", marker = "extra == 'dev-torch'", specifier = ">=2.1" },
+    { name = "torch", marker = "extra == 'serving'", specifier = ">=2.1" },
+    { name = "torch", marker = "extra == 'torch'", specifier = ">=2.1" },
+    { name = "torch", marker = "extra == 'torchhub'", specifier = ">=2.1" },
     { name = "torchaudio", marker = "extra == 'all'" },
     { name = "torchaudio", marker = "extra == 'dev'" },
     { name = "torchaudio", marker = "extra == 'dev-torch'" },

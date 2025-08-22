@@ -544,6 +544,7 @@ class DiffusionPolicy(nn.Module):
         self.lora_rank_vision_encoder = model_cfg.policy_cfg.lora_rank_vision_encoder
         self.diffusion_model_type = model_cfg.policy_cfg.diffusion_model_type
         self.gripper_loss_w = model_cfg.policy_cfg.gripper_loss_w
+        self.objective = model_cfg.policy_cfg.diffusion_objective
         # print("gripper_loss_w: ", self.gripper_loss_w)
 
         if self.timm_vision_encoder is not None:
