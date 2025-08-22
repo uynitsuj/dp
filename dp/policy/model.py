@@ -768,6 +768,75 @@ class DiffusionPolicy(nn.Module):
         
         return obs_features
 
+    def _build_xt_and_target_flow_rect(self, x):
+        """
+        Rectified Flow: x_t = (1-t) z + t x, target v* = x - z
+        x: (B, T, D)
+        returns x_t, v_target, t
+        """
+        B = x.shape[0]
+        z = torch.randn_like(x)
+        # sample continuous t ~ U(0,1); broadcast to (B, 1, 1) so it works for (B,T,D)
+        t = torch.rand(B, 1, 1, device=x.device)
+        x_t = (1.0 - t) * z + t * x
+        v_target = x - z
+        return x_t, v_target, t
+
+    def _build_xt_and_target_flow_gauss(self, x):
+        """
+        Gaussian-path Flow Matching (optional): reuse your scheduler but compute derivatives.
+        Requires continuous t in [0,1]. We'll map t->[0, num_train_timesteps-1] for embeddings,
+        but derive alpha, sigma, and their derivatives analytically (implement your schedule here).
+        """
+        B = x.shape[0]
+        z = torch.randn_like(x)
+        t = torch.rand(B, 1, 1, device=x.device)
+
+        # Implement your schedule analytically here if you want Gaussian FM.
+        # Example placeholders (MUST be replaced with your true alpha(t), sigma(t) and derivatives):
+        # alpha_bar = ...
+        # alpha = torch.sqrt(alpha_bar)
+        # sigma = torch.sqrt(1 - alpha_bar)
+        # alpha_dot = 0.5 * alpha_bar_dot / alpha
+        # sigma_dot = -0.5 * alpha_bar_dot / sigma
+
+        raise NotImplementedError("flow_gauss path: implement alpha(t),sigma(t), and derivatives or use flow_rect.")
+    
+    @torch.no_grad()
+    def _fm_sample_heun(self, obs_features, B, steps=16):
+        """
+        Heun's method (2nd order) to integrate dx/dt = v_theta(x,t,c) from t=0->1.
+        obs_features: (B, obs_horizon, obs_dim_t)   # same as you pass during training
+        Returns: x at t=1, i.e., predicted actions (B, T, D)
+        """
+        # init x(0) ~ N(0,I)
+        x = torch.randn((B, self.action_horizon, self.action_dim), device=obs_features.device)
+
+        # time grid
+        t_grid = torch.linspace(0., 1., steps + 1, device=x.device)
+        dt = t_grid[1] - t_grid[0]
+
+        for i in range(steps):
+            ti = t_grid[i].expand(B)                        # (B,)
+            tip1 = t_grid[i+1].expand(B)                    # (B,)
+
+            # discretize for time embeddings (same trick as in training)
+            ti_idx = (ti * (self.noise_scheduler.config.num_train_timesteps - 1)).long()
+            tip1_idx = (tip1 * (self.noise_scheduler.config.num_train_timesteps - 1)).long()
+
+            if self.diffusion_model_type == "unet":
+                k1 = self.noise_pred_net(x, ti_idx, global_cond=obs_features.flatten(start_dim=1))   # (B,T,D)
+                x_euler = x + dt * k1
+                k2 = self.noise_pred_net(x_euler, tip1_idx, global_cond=obs_features.flatten(start_dim=1))
+            else:
+                k1 = self.noise_pred_net(x, ti_idx, cond=obs_features)   # (B,T,D)
+                x_euler = x + dt * k1
+                k2 = self.noise_pred_net(x_euler, tip1_idx, cond=obs_features)
+
+            x = x + 0.5 * dt * (k1 + k2)
+
+        return x
+
     def forward_loss(self, nbatch):
         nimage = nbatch["observation"][:, :, :self.num_cameras] # pick the first image # B, T, self.num_cameras, C, H ,W
         nagent_pos = nbatch["proprio"] # pick the current proprio # B, T, D
@@ -804,34 +873,50 @@ class DiffusionPolicy(nn.Module):
         # naction = naction.flatten(start_dim=1)
         # (B, obs_horizon * obs_dim)
 
-        # sample noise to add to actions
-        noise = torch.randn(naction.shape, device=naction.device)
+        if self.objective == "diffusion":
+            # ------- ORIGINAL DIFFUSION -------
+            noise = torch.randn(naction.shape, device=naction.device)
+            timesteps = torch.randint(
+                0, self.noise_scheduler.config.num_train_timesteps, (B,), device=naction.device
+            ).long()
+            noisy_actions = self.noise_scheduler.add_noise(naction, noise, timesteps)
 
-        # sample a diffusion iteration for each data point
-        timesteps = torch.randint(0, self.noise_scheduler.config.num_train_timesteps,(B,), device=naction.device).long()
+            if self.diffusion_model_type == "unet":
+                pred = self.noise_pred_net(noisy_actions, timesteps, global_cond=obs_cond)
+            else:
+                pred = self.noise_pred_net(noisy_actions, timesteps, cond=obs_features)
 
-        # add noise to the clean images according to the noise magnitude at each diffusion iteration
-        # (this is the forward diffusion process)
-        noisy_actions = self.noise_scheduler.add_noise(naction, noise, timesteps)
+            target = noise  # diffusion target
 
-        # predict the noise residual
-        if self.diffusion_model_type == "unet":
-            noise_pred = self.noise_pred_net(noisy_actions, timesteps, global_cond=obs_cond)
         else:
-            # For transformer, we need to pass the observation features directly
-            noise_pred = self.noise_pred_net(noisy_actions, timesteps, cond=obs_features)
+            # ------- FLOW MATCHING (Rectified Flow by default) -------
+            if self.objective == "flow_rect":
+                x_t, v_target, t_cont = self._build_xt_and_target_flow_rect(naction)  # (B, T, D), (B, T, D), (B,1,1)
+            elif self.objective == "flow_gauss":
+                x_t, v_target, t_cont = self._build_xt_and_target_flow_gauss(naction)
+            else:
+                raise ValueError(f"Unknown objective: {self.objective}")
 
-        # L2 loss
+            # Your backbones expect a 'timesteps' input (int). We can discretize for embeddings:
+            # (this only affects the time embedding; the target remains correct)
+            t_idx = (t_cont.squeeze(-1).squeeze(-1) * (self.noise_scheduler.config.num_train_timesteps - 1)).long()
+
+            if self.diffusion_model_type == "unet":
+                pred = self.noise_pred_net(x_t, t_idx, global_cond=obs_cond)   # predict velocity
+            else:
+                pred = self.noise_pred_net(x_t, t_idx, cond=obs_features)      # predict velocity
+
+            target = v_target  # flow-matching target
+
+        # ------- shared loss weighting (grippers etc.) -------
+        loss = nn.functional.mse_loss(pred, target, reduction='none')
         if self.pred_left_only or self.pred_right_only:
-            loss = nn.functional.mse_loss(noise_pred, noise, reduction='none')
             loss[..., -1] *= self.gripper_loss_w
-            loss = loss.mean()
         else:
-            loss = nn.functional.mse_loss(noise_pred, noise, reduction='none')
             loss[..., self.action_dim // 2 - 1] *= self.gripper_loss_w
             loss[..., -1] *= self.gripper_loss_w
-            loss = loss.mean()
-        # loss = nn.functional.mse_loss(noise_pred, noise)
+        loss = loss.mean()
+
         return loss
 
     def forward(self, nbatch):
@@ -841,68 +926,96 @@ class DiffusionPolicy(nn.Module):
             # raise NotImplementedError("Inference not implemented yet")
 
     def forward_inference(self, nbatch, vision_transform=None):
-        """
-        Inference method for the diffusion policy.
-        
-        Args:
-            nbatch: Batch dictionary containing:
-                - observation: Images of shape (B, T, num_cameras, C, H, W)
-                - proprio: Proprioceptive data of shape (B, T, D)
-            vision_transform: Optional function to transform images
-            
-        Returns:
-            Predicted actions of shape (B, action_horizon, action_dim)
-        """
-        # Process batch
         nimage, nagent_pos, B = self._process_batch(nbatch, vision_transform)
-        
-        # Get observation features
         obs_features = self._get_observation_features(nimage, nagent_pos)
-        
-        # For transformer, we need to pass the observation features directly
-        obs_cond = obs_features.flatten(start_dim=1)
-        
-        # Initialize with random noise
-        if self.diffusion_model_type == "unet":
-            # For UNet, we need to reshape to (B, T, D)
-            noisy_actions = torch.randn(
-                (B, self.action_horizon, self.action_dim), 
-                device=obs_cond.device
-            )
-            
-            # Denoise step by step
-            for t in self.noise_scheduler.timesteps:
-                # Predict noise residual
-                noise_pred = self.noise_pred_net(noisy_actions, t, global_cond=obs_cond)
-                
-                # Compute previous noisy sample x_t -> x_t-1
-                noisy_actions = self.noise_scheduler.step(
-                    noise_pred, t, noisy_actions
-                ).prev_sample
-            
-            # Final prediction
-            pred_action = noisy_actions
+
+        if self.objective == "diffusion":
+            # ---- original diffusion sampling (unchanged) ----
+            obs_cond = obs_features.flatten(start_dim=1)
+            if self.diffusion_model_type == "unet":
+                noisy_actions = torch.randn((B, self.action_horizon, self.action_dim), device=obs_cond.device)
+                for t in self.noise_scheduler.timesteps:
+                    noise_pred = self.noise_pred_net(noisy_actions, t, global_cond=obs_cond)
+                    noisy_actions = self.noise_scheduler.step(noise_pred, t, noisy_actions).prev_sample
+                pred_action = noisy_actions
+            else:
+                noisy_actions = torch.randn((B, self.action_horizon, self.action_dim), device=obs_cond.device)
+                for t in self.noise_scheduler.timesteps:
+                    noise_pred = self.noise_pred_net(noisy_actions, t, cond=obs_features)
+                    noisy_actions = self.noise_scheduler.step(noise_pred, t, noisy_actions).prev_sample
+                pred_action = noisy_actions
+            return pred_action
+
         else:
-            # For transformer, we need to reshape to (B, T, D)
-            noisy_actions = torch.randn(
-                (B, self.action_horizon, self.action_dim), 
-                device=obs_cond.device
-            )
-            
-            # Denoise step by step
-            for t in self.noise_scheduler.timesteps:
-                # Predict noise residual
-                noise_pred = self.noise_pred_net(noisy_actions, t, cond=obs_features)
-                
-                # Compute previous noisy sample x_t -> x_t-1
-                noisy_actions = self.noise_scheduler.step(
-                    noise_pred, t, noisy_actions
-                ).prev_sample
-            
-            # Final prediction
-            pred_action = noisy_actions
+            # ---- Flow Matching ODE sampling ----
+            # For UNet we passed flattened global cond during training; mirror that here.
+            # The helper handles both UNet and Transformer internally.
+            pred_action = self._fm_sample_heun(obs_features, B, steps=getattr(self, "fm_nfe", 16))
+            return pred_action
+
+    # def forward_inference(self, nbatch, vision_transform=None):
+    #     """
+    #     Inference method for the diffusion policy.
         
-        return pred_action
+    #     Args:
+    #         nbatch: Batch dictionary containing:
+    #             - observation: Images of shape (B, T, num_cameras, C, H, W)
+    #             - proprio: Proprioceptive data of shape (B, T, D)
+    #         vision_transform: Optional function to transform images
+            
+    #     Returns:
+    #         Predicted actions of shape (B, action_horizon, action_dim)
+    #     """
+    #     # Process batch
+    #     nimage, nagent_pos, B = self._process_batch(nbatch, vision_transform)
+        
+    #     # Get observation features
+    #     obs_features = self._get_observation_features(nimage, nagent_pos)
+        
+    #     # For transformer, we need to pass the observation features directly
+    #     obs_cond = obs_features.flatten(start_dim=1)
+        
+    #     # Initialize with random noise
+    #     if self.diffusion_model_type == "unet":
+    #         # For UNet, we need to reshape to (B, T, D)
+    #         noisy_actions = torch.randn(
+    #             (B, self.action_horizon, self.action_dim), 
+    #             device=obs_cond.device
+    #         )
+            
+    #         # Denoise step by step
+    #         for t in self.noise_scheduler.timesteps:
+    #             # Predict noise residual
+    #             noise_pred = self.noise_pred_net(noisy_actions, t, global_cond=obs_cond)
+                
+    #             # Compute previous noisy sample x_t -> x_t-1
+    #             noisy_actions = self.noise_scheduler.step(
+    #                 noise_pred, t, noisy_actions
+    #             ).prev_sample
+            
+    #         # Final prediction
+    #         pred_action = noisy_actions
+    #     else:
+    #         # For transformer, we need to reshape to (B, T, D)
+    #         noisy_actions = torch.randn(
+    #             (B, self.action_horizon, self.action_dim), 
+    #             device=obs_cond.device
+    #         )
+            
+    #         # Denoise step by step
+    #         for t in self.noise_scheduler.timesteps:
+    #             # Predict noise residual
+    #             noise_pred = self.noise_pred_net(noisy_actions, t, cond=obs_features)
+                
+    #             # Compute previous noisy sample x_t -> x_t-1
+    #             noisy_actions = self.noise_scheduler.step(
+    #                 noise_pred, t, noisy_actions
+    #             ).prev_sample
+            
+    #         # Final prediction
+    #         pred_action = noisy_actions
+        
+    #     return pred_action
 
     def __repr__(self):
         return f"DiffusionPolicy(action_dim={self.action_dim}, obs_horizon={self.obs_horizon}, action_horizon={self.action_horizon}, diffusion_model_type={self.diffusion_model_type})"

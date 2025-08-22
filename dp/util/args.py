@@ -127,6 +127,9 @@ class PolicyConfig:
     # Prediction head, can be one of "mlp", "gmm", "diffusion"
     decoder_pred_head : Literal["mlp", "gmm", "diffusion", "discrete"] = "diffusion"
 
+    # Allowed: "diffusion" (current), "flow_rect" (Rectified Flow), "flow_gauss" (Gaussian-path FM)
+    diffusion_objective : Literal["diffusion", "flow_rect", "flow_gauss"] = "flow_rect"
+
     # use kl div loss
     kl_div_loss : bool = False
 
