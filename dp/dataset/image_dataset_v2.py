@@ -440,6 +440,7 @@ class SequenceDataset(Dataset):
         camera_observations = []
         for image_path in image_paths:
             image = Image.open(image_path)
+            # import pdb; pdb.set_trace()
             image = self.vision_transform(image)
             camera_observations.append(image)
 

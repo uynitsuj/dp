@@ -82,8 +82,8 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s:%(na
 # ----------------------------
 @dataclass
 class ServerConfig:
-    model_ckpt_folder: str = "/nfs_us/justinyu/dp/intergripper_proprio_test_20250821_140914"
-    ckpt_id: int = 90
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_test_20250821_140914"
+    ckpt_id: int = 145
     host: str = "0.0.0.0"
     port: int = 8111
     device: str = "cuda"  # "cuda" | "cpu" | "cuda:0" ...
@@ -155,18 +155,22 @@ def repack_obs(obs: Dict[str, Any], camera_keys: Optional[List[str]] = None) -> 
         for key in camera_keys:
             assert key in obs, f"Camera key {key} not found in obs"
             # if the range of image values is 0-255, convert to 0-1
-            if obs[key].max() <= 1.0:
-                observation.append(obs[key])
-            else:
-                observation.append(obs[key] / 255.0) # Assumption: if image max value is gt 1, then it's likely in [0, 255]
+            # if obs[key].max() <= 1.0:
+            #     observation.append(obs[key])
+            # else:
+            #     observation.append(obs[key] / 255.0) # Assumption: if image max value is gt 1, then it's likely in [0, 255]
+            observation.append(obs[key])
+
     else:
         for key in obs:
             if "images" in key:
                 # if the range of image values is 0-255, convert to 0-1
-                if obs[key].max() <= 1.0:
-                    observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
-                else:
-                    observation.append(obs[key] / 255.0)
+                # if obs[key].max() <= 1.0:
+                #     observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
+                # else:
+                #     observation.append(obs[key] / 255.0)
+                observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
+
 
     new_obs["observation"] = torch.cat(observation, dim=1).unsqueeze(0)    # (B, T, num_cameras, C, H, W)
     new_obs["proprio"] = obs["state"]
@@ -245,7 +249,8 @@ class _DiffusionWrapperAdapter:
                 camera_keys = self._infer.model.camera_keys
             nbatch = repack_obs(nbatch, camera_keys = camera_keys)
             vision_transform = transforms_noaug_train(resolution=224) # TODO: remove hardcode everywhere eventually and take this from cfg
-            nbatch["observation"] = vision_transform(nbatch["observation"])
+            # import pdb; pdb.set_trace()
+            nbatch["observation"] = vision_transform(nbatch["observation"]/255.0)
             pred_action = self._infer(nbatch)
 
             # Decode or pass-through depending on model type

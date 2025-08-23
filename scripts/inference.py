@@ -164,9 +164,9 @@ def _plot_error_heatmap(
 class InferenceConfig:
     # path to model checkpoint
     # model_ckpt_folder: str = "/nfs_us/justinyu/dp/absolute_test_20250821_142116"
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_test_20250821_140914"
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_scaleDP_20250821_205127"
     # ckpt_id : int = 0
-    ckpt_id : int = 90
+    ckpt_id : int = 195
 
 def main(inference_config: InferenceConfig):
     # parsing args 

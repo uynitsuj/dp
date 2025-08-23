@@ -269,15 +269,16 @@ class DiffusionWrapper():
             # save observation images nbatch["observation"] torch.Size([1, 1, 3, 3, 224, 224]) to file
             # and plot nbatch["proprio"] torch.Size([1, 1, 29]) to file
             # import pdb; pdb.set_trace()
-            import matplotlib.pyplot as plt
-            for i in range(nbatch["observation"].shape[1]):
-                for j in range(nbatch["observation"].shape[2]):
-                    image = nbatch["observation"][0, i, j, :, :, :]
-                    image = image.permute(1, 2, 0).cpu().numpy()
-                    image = (image * 255).astype(np.uint8)
-                    plt.imshow(image)
-                    plt.savefig(f"observation_{i}_{j}.png")
-                plt.close()
+
+            # import matplotlib.pyplot as plt
+            # for i in range(nbatch["observation"].shape[1]):
+            #     for j in range(nbatch["observation"].shape[2]):
+            #         image = nbatch["observation"][0, i, j, :, :, :]
+            #         image = image.permute(1, 2, 0).cpu().numpy()
+            #         image = (image * 255).astype(np.uint8)
+            #         plt.imshow(image)
+            #         plt.savefig(f"observation_{i}_{j}.png")
+            #     plt.close()
 
             # import viser
             # import viser.transforms as vtf
@@ -295,24 +296,26 @@ class DiffusionWrapper():
             # )
 
             # left_in_world = right_t0_in_world @ left_t0_in_right
-            # left_in_world_6d_rot = quat_to_rot_6d(left_in_world.wxyz_xyz[..., :4][None, ...])[0]
+            # # left_in_world_6d_rot = quat_to_rot_6d(left_in_world.wxyz_xyz[..., :4][None, ...])[0]
 
-            # state[:6] = torch.from_numpy(left_in_world_6d_rot)
-            # state[6:9] = torch.from_numpy(left_in_world.wxyz_xyz[..., -3:])
+            # # state[:6] = torch.from_numpy(left_in_world_6d_rot)
+            # # state[6:9] = torch.from_numpy(left_in_world.wxyz_xyz[..., -3:])
 
             # # if self.action_dim == 29:
             # top_t0_in_right = vtf.SE3.from_rotation_and_translation(
             #     vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[20:26]))[0]), np.asarray(state[26:29])
             # )
             # top_in_world = right_t0_in_world @ top_t0_in_right
-            # top_in_world_6d_rot = quat_to_rot_6d(top_in_world.wxyz_xyz[..., :4][None, ...])[0]
-            # state[20:26] = torch.from_numpy(top_in_world_6d_rot)
-            # state[26:29] = torch.from_numpy(top_in_world.wxyz_xyz[..., -3:])
+            # # top_in_world_6d_rot = quat_to_rot_6d(top_in_world.wxyz_xyz[..., :4][None, ...])[0]
+            # # state[20:26] = torch.from_numpy(top_in_world_6d_rot)
+            # # state[26:29] = torch.from_numpy(top_in_world.wxyz_xyz[..., -3:])
 
             # viser_server.scene.add_frame(f"left_t0_in_world", position=left_in_world.wxyz_xyz[-3:], wxyz=left_in_world.wxyz_xyz[:4])
             # viser_server.scene.add_frame(f"right_t0_in_world", position=right_t0_in_world.wxyz_xyz[-3:], wxyz=right_t0_in_world.wxyz_xyz[:4])
             # viser_server.scene.add_frame(f"right_t0_state_in_world", position=right_t0_in_world.wxyz_xyz[-3:], wxyz=right_t0_in_world.wxyz_xyz[:4])
             # viser_server.scene.add_frame(f"right_t0_in_world/left_in_right", position=left_t0_in_right.wxyz_xyz[-3:], wxyz=left_t0_in_right.wxyz_xyz[:4])
+            # viser_server.scene.add_frame(f"right_t0_in_world/top_in_right", position=top_t0_in_right.wxyz_xyz[-3:], wxyz=top_t0_in_right.wxyz_xyz[:4])
+            # viser_server.scene.add_frame(f"top_in_world", position=top_in_world.wxyz_xyz[-3:], wxyz=top_in_world.wxyz_xyz[:4])
 
             # import pdb; pdb.set_trace()
             
