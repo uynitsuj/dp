@@ -9,11 +9,9 @@ from diffusers.schedulers.scheduling_ddim import DDIMScheduler
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from transformers import AutoProcessor
 
-# from timm.data.transforms_factory import transforms_noaug_train
 from dp.dataset.utils import default_vision_transform as transforms_noaug_train  # scale to 224 224 first 
 from dp.dataset.utils import unscale_action
 from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
-# from dp.util.args import ExperimentConfig
 from dp.util.config import TrainConfig
 from dataclasses import replace
 import time
@@ -23,42 +21,6 @@ torch.backends.cudnn.allow_tf32 = True
 
 from torch.nn.attention import sdpa_kernel, SDPBackend
 torch.set_float32_matmul_precision("high")  # or "highest" if you like
-
-# def load_state_dict_flexible(model, state_dict):
-#     """
-#     Load state dict while handling both DDP and non-DDP scenarios.
-#     """
-#     # Print model and state dict keys for debugging
-#     print("Model state_dict keys:", model.state_dict().keys())
-#     print("Loaded state_dict keys:", state_dict.keys())
-    
-#     # Check if state_dict has 'module.' prefix
-#     is_parallel = any(key.startswith('module.') for key in state_dict.keys())
-    
-#     try:
-#         # If model is DDP but state_dict is not parallel
-#         if hasattr(model, 'module') and not is_parallel:
-#             missing, unexpected = model.module.load_state_dict(state_dict, strict=False)
-        
-#         # If model is not DDP but state_dict is parallel
-#         elif not hasattr(model, 'module') and is_parallel:
-#             prefix = 'module.'
-#             new_state_dict = {key.removeprefix(prefix): value 
-#                              for key, value in state_dict.items()}
-#             missing, unexpected = model.load_state_dict(new_state_dict, strict=False)
-        
-#         # If both are parallel or both are not parallel
-#         else:
-#             missing, unexpected = model.load_state_dict(state_dict, strict=False)
-            
-#         print(f"Missing keys: {missing}")
-#         print(f"Unexpected keys: {unexpected}")
-        
-#         return model
-        
-#     except Exception as e:
-#         print(f"Error loading state dict: {str(e)}")
-#         raise
 
 def load_state_dict_flexible(model, state_dict):
     """
@@ -171,10 +133,8 @@ class DiffusionWrapper():
             self.model.noise_scheduler.set_timesteps(self.inference_step)
 
 
-        # import pdb; pdb.set_trace()
         args = replace(args, dataset_cfg=args.dataset_cfg.create())
         self.data_transforms = args.dataset_cfg.data_transforms
-        # import pdb; pdb.set_trace()
 
     def validate_model_state(self):
         """
@@ -285,77 +245,21 @@ class DiffusionWrapper():
             # if nbatch[key] is a tensor move to device
             if isinstance(nbatch[key], torch.Tensor):
                 nbatch[key] = nbatch[key].to(self.device)
+        
         # with torch.inference_mode():
+
         with sdpa_kernel([SDPBackend.FLASH_ATTENTION,
                   SDPBackend.EFFICIENT_ATTENTION,
                   SDPBackend.MATH]), \
-                torch.inference_mode(): #, \
-                # torch.autocast("cuda", dtype=torch.bfloat16):
-            # Use model's forward_inference method
+                torch.inference_mode():
+
             t0 = time.time()
             naction = self.model.forward_inference(nbatch, self.vision_transform)
             t1 = time.time()
             print("forward_inference time", t1 - t0)
 
-            # save observation images nbatch["observation"] torch.Size([1, 1, 3, 3, 224, 224]) to file
-            # and plot nbatch["proprio"] torch.Size([1, 1, 29]) to file
-            # import pdb; pdb.set_trace()
-
-            # import matplotlib.pyplot as plt
-            # for i in range(nbatch["observation"].shape[1]):
-            #     for j in range(nbatch["observation"].shape[2]):
-            #         image = nbatch["observation"][0, i, j, :, :, :]
-            #         image = image.permute(1, 2, 0).cpu().numpy()
-            #         image = (image * 255).astype(np.uint8)
-            #         plt.imshow(image)
-            #         plt.savefig(f"observation_{i}_{j}.png")
-            #     plt.close()
-
-            # import viser
-            # import viser.transforms as vtf
-            # from dp.util.matrix_utils import rot_6d_to_quat, quat_to_rot_6d
-            # viser_server = viser.ViserServer()
-            # # action format is [left_6d_rot, left_ee_ik_target_handle_position, left_gripper_pos, right_6d_rot, right_ee_ik_target_handle_position, right_gripper_pos]
-            # state = nbatch["proprio"][0][0].cpu().numpy() # index 0 batch and tstep (current)
-
-            # left_t0_in_right = vtf.SE3.from_rotation_and_translation(
-            #     vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[:6]))[0]), np.asarray(state[6:9])
-            # )
-
-            # right_t0_in_world = vtf.SE3.from_rotation_and_translation(
-            #     vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[10:16]))[0]), np.asarray(state[16:19])
-            # )
-
-            # left_in_world = right_t0_in_world @ left_t0_in_right
-            # # left_in_world_6d_rot = quat_to_rot_6d(left_in_world.wxyz_xyz[..., :4][None, ...])[0]
-
-            # # state[:6] = torch.from_numpy(left_in_world_6d_rot)
-            # # state[6:9] = torch.from_numpy(left_in_world.wxyz_xyz[..., -3:])
-
-            # # if self.action_dim == 29:
-            # top_t0_in_right = vtf.SE3.from_rotation_and_translation(
-            #     vtf.SO3(wxyz=rot_6d_to_quat(np.asarray(state[20:26]))[0]), np.asarray(state[26:29])
-            # )
-            # top_in_world = right_t0_in_world @ top_t0_in_right
-            # # top_in_world_6d_rot = quat_to_rot_6d(top_in_world.wxyz_xyz[..., :4][None, ...])[0]
-            # # state[20:26] = torch.from_numpy(top_in_world_6d_rot)
-            # # state[26:29] = torch.from_numpy(top_in_world.wxyz_xyz[..., -3:])
-
-            # viser_server.scene.add_frame(f"left_t0_in_world", position=left_in_world.wxyz_xyz[-3:], wxyz=left_in_world.wxyz_xyz[:4])
-            # viser_server.scene.add_frame(f"right_t0_in_world", position=right_t0_in_world.wxyz_xyz[-3:], wxyz=right_t0_in_world.wxyz_xyz[:4])
-            # viser_server.scene.add_frame(f"right_t0_state_in_world", position=right_t0_in_world.wxyz_xyz[-3:], wxyz=right_t0_in_world.wxyz_xyz[:4])
-            # viser_server.scene.add_frame(f"right_t0_in_world/left_in_right", position=left_t0_in_right.wxyz_xyz[-3:], wxyz=left_t0_in_right.wxyz_xyz[:4])
-            # viser_server.scene.add_frame(f"right_t0_in_world/top_in_right", position=top_t0_in_right.wxyz_xyz[-3:], wxyz=top_t0_in_right.wxyz_xyz[:4])
-            # viser_server.scene.add_frame(f"top_in_world", position=top_in_world.wxyz_xyz[-3:], wxyz=top_in_world.wxyz_xyz[:4])
-
-            # import pdb; pdb.set_trace()
-            
-            # Handle denormalization and left/right prediction
             if denormalize:
-                # if self.model.pred_left_only or self.model.pred_right_only:
-                #     naction = torch.concatenate([naction, naction], dim=-1)
                 naction = unscale_action(naction, stat=self.stats, type='diffusion')
-
             if self.data_transforms is not None:
                 data_dict = {
                     "action": naction,
@@ -364,15 +268,6 @@ class DiffusionWrapper():
                 for tf_fn in self.data_transforms.outputs:
                     data_dict = tf_fn(data_dict)
                 naction = data_dict["action"]
-            
-            # Handle left/right prediction
-            # if self.model.pred_left_only:
-            #     proprio_right = nbatch["proprio"][:, -1:, self.model.action_dim:]
-            #     naction[:, :, self.model.action_dim:] = proprio_right
-            
-            # if self.model.pred_right_only:
-            #     proprio_left = nbatch["proprio"][:, -1:, :self.model.action_dim]
-            #     naction[:, :, :self.model.action_dim] = proprio_left
             
             naction = naction.detach().to('cpu').numpy()
             return naction
