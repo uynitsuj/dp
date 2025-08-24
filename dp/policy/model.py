@@ -575,7 +575,7 @@ class DiffusionPolicy(nn.Module):
                 model_name="facebook/dinov3-vitb16-pretrain-lvd1689m",
                 crop_size=(200, 200),
                 target_size=(224, 224),
-                freeze_backbone=True,
+                freeze_backbone= self.lora_rank_vision_encoder > 0,
                 eval_fixed_crop=False,
                 normalize_images=False, # normalized outside this wrapper
             )
@@ -586,7 +586,8 @@ class DiffusionPolicy(nn.Module):
                     lora_alpha=self.lora_rank_vision_encoder,
                     target_modules=["q_proj", "v_proj", "o_proj", "up_proj", "down_proj"]
                 )
-                self.vision_encoder = get_peft_model(self.vision_encoder, lora_config)
+                
+                self.vision_encoder.backbone = get_peft_model(self.vision_encoder.backbone, lora_config)
         else:
             # fallback toconstruct ResNet18 encoder
             # if you have multiple camera views, use seperate encoder weights for each view.

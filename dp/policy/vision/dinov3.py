@@ -121,7 +121,7 @@ class AttnPoolHead(nn.Module):
         tokens = self.ln_tokens(tokens)
 
         # queries: (B, M, D)
-        q = self.query.unsqueeze(0).expand(B, -1, -1)
+        q = self.query.unsqueeze(0).expand(B, -1, -1).to(tokens.dtype)
         q = self.ln_queries(q)
 
         # Cross-attention: pooled_q = Attn(Q, K=tokens, V=tokens) -> (B, M, D)
@@ -263,16 +263,29 @@ class Dinov3ImageBranch(nn.Module):
         # Optional: remember if backbone is frozen to skip grads
         self._frozen = all(not p.requires_grad for p in self.backbone.parameters())
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         center = (not self.training) or self.eval_fixed_crop
         x = _rand_or_center_crop(x, self.crop_h, self.crop_w, center=center)
 
-        if self._frozen:
+        requires_grad = any(p.requires_grad for p in self.backbone.parameters())
+        if not requires_grad:
             with torch.no_grad():
-                feat = self.backbone(x)  # (B, D, gh, gw)
+                feat = self.backbone(x)
         else:
             feat = self.backbone(x)
-        return self.pool(feat)            # (B, pooled_dim)
+            
+        return self.pool(feat)
+
+    # def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # center = (not self.training) or self.eval_fixed_crop
+        # x = _rand_or_center_crop(x, self.crop_h, self.crop_w, center=center)
+
+        # if self._frozen:
+        #     with torch.no_grad():
+        #         feat = self.backbone(x)  # (B, D, gh, gw)
+        # else:
+        #     feat = self.backbone(x)
+        # return self.pool(feat)            # (B, pooled_dim)
 
 # --------------------- main dict encoder ---------------------
 
