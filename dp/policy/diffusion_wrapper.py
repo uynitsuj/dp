@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import yaml
 from diffusers.schedulers.scheduling_ddim import DDIMScheduler
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from transformers import AutoProcessor
 
 # from timm.data.transforms_factory import transforms_noaug_train
@@ -15,6 +16,7 @@ from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
 # from dp.util.args import ExperimentConfig
 from dp.util.config import TrainConfig
 from dataclasses import replace
+import time
 
 # def load_state_dict_flexible(model, state_dict):
 #     """
@@ -133,20 +135,24 @@ class DiffusionWrapper():
         self.vision_transform = transforms_noaug_train(resolution=resolution)
         # self.validate_model_state()  # Add validation after loading
         if self.policy_type == "diffusion":
-            self.inference_step = 10
-            self.noise_scheduler = DDIMScheduler(
-                num_train_timesteps = self.model.num_diffusion_iters,
-                beta_schedule='squaredcos_cap_v2',
-                clip_sample=True,
-                prediction_type= self.model.prediction_type)
-            
-            # self.inference_step = self.model.num_diffusion_iters
-            # self.noise_scheduler = DDPMScheduler(
+            # self.inference_step = 10
+            # self.noise_scheduler = DDIMScheduler(
             #     num_train_timesteps = self.model.num_diffusion_iters,
             #     beta_schedule='squaredcos_cap_v2',
             #     clip_sample=True,
             #     prediction_type= self.model.prediction_type)
-            # self.noise_scheduler.set_timesteps(self.inference_step)
+            
+            # self.model.num_diffusion_iters = args.model_cfg.policy_cfg.num_inference_diffusion_steps
+
+            self.inference_step = 10
+
+            self.model.noise_scheduler = DDPMScheduler(
+                num_train_timesteps = self.model.num_diffusion_iters,
+                beta_schedule='squaredcos_cap_v2',
+                clip_sample=True,
+                prediction_type= self.model.prediction_type)
+            self.model.noise_scheduler.set_timesteps(self.inference_step)
+
 
         # import pdb; pdb.set_trace()
         args = replace(args, dataset_cfg=args.dataset_cfg.create())
@@ -264,7 +270,10 @@ class DiffusionWrapper():
                 nbatch[key] = nbatch[key].to(self.device)
         with torch.inference_mode():
             # Use model's forward_inference method
+            t0 = time.time()
             naction = self.model.forward_inference(nbatch, self.vision_transform)
+            t1 = time.time()
+            print("forward_inference time", t1 - t0)
 
             # save observation images nbatch["observation"] torch.Size([1, 1, 3, 3, 224, 224]) to file
             # and plot nbatch["proprio"] torch.Size([1, 1, 29]) to file

@@ -82,8 +82,9 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s:%(na
 # ----------------------------
 @dataclass
 class ServerConfig:
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_test_20250821_140914"
-    ckpt_id: int = 145
+    # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/resnet-intergripper-proprio-29D_20250823_152419"
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_scaleDP_20250821_205127"
+    ckpt_id: int = 80
     host: str = "0.0.0.0"
     port: int = 8111
     device: str = "cuda"  # "cuda" | "cpu" | "cuda:0" ...
@@ -350,6 +351,7 @@ class WebsocketPolicyServer:
 
                 payload = dict(out)
                 payload["server_timing"] = {"infer_ms": infer_ms}
+                print("infer_ms", infer_ms)
                 if prev_total is not None:
                     payload["server_timing"]["prev_total_ms"] = prev_total * 1000.0
 
