@@ -18,6 +18,12 @@ from dp.util.config import TrainConfig
 from dataclasses import replace
 import time
 
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+
+from torch.nn.attention import sdpa_kernel, SDPBackend
+torch.set_float32_matmul_precision("high")  # or "highest" if you like
+
 # def load_state_dict_flexible(model, state_dict):
 #     """
 #     Load state dict while handling both DDP and non-DDP scenarios.
@@ -122,8 +128,19 @@ class DiffusionWrapper():
         except FileNotFoundError:
             print(f"File {model_ckpt_name} not found")
             raise
+        
+
         self.model = self.model.to(device)
+        self.model = torch.compile(self.model, mode="max-autotune")
         self.model.eval()
+
+        # If you used LoRA and you’re DONE fine-tuning:
+        if hasattr(self.model, "merge_and_unload"):
+            self.model.merge_and_unload()
+
+        ve = getattr(self.model, "vision_encoder", None)
+        if hasattr(ve, "merge_and_unload"):
+            ve.merge_and_unload()
         
         # vision transform
         if args.shared_cfg.s2:
@@ -268,7 +285,12 @@ class DiffusionWrapper():
             # if nbatch[key] is a tensor move to device
             if isinstance(nbatch[key], torch.Tensor):
                 nbatch[key] = nbatch[key].to(self.device)
-        with torch.inference_mode():
+        # with torch.inference_mode():
+        with sdpa_kernel([SDPBackend.FLASH_ATTENTION,
+                  SDPBackend.EFFICIENT_ATTENTION,
+                  SDPBackend.MATH]), \
+                torch.inference_mode(): #, \
+                # torch.autocast("cuda", dtype=torch.bfloat16):
             # Use model's forward_inference method
             t0 = time.time()
             naction = self.model.forward_inference(nbatch, self.vision_transform)

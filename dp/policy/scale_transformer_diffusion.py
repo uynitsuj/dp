@@ -45,37 +45,50 @@ def _approx_gelu():
 
 class _Attention(nn.Module):
     """Lightweight multi-head attention with dropout and optional mask."""
-
     def __init__(self, dim: int, n_head: int, p_attn: float = 0.0, p_proj: float = 0.0):
         super().__init__()
         assert dim % n_head == 0, "dim must be divisible by n_head"
         self.n_head = n_head
         self.head_dim = dim // n_head
-        self.scale = self.head_dim ** -0.5
 
         self.qkv = nn.Linear(dim, dim * 3)
         self.proj = nn.Linear(dim, dim)
-        self.attn_drop = nn.Dropout(p_attn)
+        self.attn_drop = nn.Dropout(p_attn)   # used only if self.training
         self.proj_drop = nn.Dropout(p_proj)
 
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         B, N, C = x.shape
+        H, D = self.n_head, self.head_dim
+
+        # qkv: (B, N, 3C) -> (3, B, H, N, D)
         qkv = (
             self.qkv(x)
-            .view(B, N, 3, self.n_head, self.head_dim)
+            .view(B, N, 3, H, D)
             .permute(2, 0, 3, 1, 4)
         )
-        q, k, v = qkv[0], qkv[1], qkv[2]
-        q = q * self.scale
-        attn = q @ k.transpose(-2, -1)
-        if attn_mask is not None:
-            attn = attn + attn_mask  # additive mask
-        attn = F.softmax(attn, dim=-1)
-        attn = self.attn_drop(attn)
-        x = attn @ v  # (B,h,N,d)
-        x = x.transpose(1, 2).contiguous().view(B, N, C)
-        x = self.proj_drop(self.proj(x))
+        q, k, v = qkv[0], qkv[1], qkv[2]        # (B, H, N, D)
+
+        # SDPA expects (B, H, N, D); good as-is.
+        # attn_mask handling:
+        # - Bool mask: True = keep, False = mask. Shape broadcastable to (B,H,N,N).
+        # - Float mask: additive (e.g., 0 for keep, -inf for mask), broadcastable to (B,H,N,N).
+        # If you used an "additive" mask previously (already -inf where masked), pass it directly.
+        # If your mask was pre-added to logits, DON'T pre-add; pass it here instead.
+
+        dropout_p = self.attn_drop.p if self.training and self.attn_drop.p > 0 else 0.0
+
+        x = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_mask,      # None, bool, or float mask (broadcastable to (B,H,N,N))
+            dropout_p=dropout_p,
+            is_causal=False,          # set True if you need causal masking
+        )                             # -> (B, H, N, D)
+
+        x = x.transpose(1, 2).contiguous().view(B, N, C)  # (B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
         return x
+
 
 
 class _ScaleDPBlock(nn.Module):
