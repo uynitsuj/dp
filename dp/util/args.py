@@ -74,7 +74,7 @@ class PolicyConfig:
     vision_encoder_pretrained_type : Optional[str] = "dinov3" # options: "dinov3"
 
     # lora vision encoder 
-    lora_rank_vision_encoder : int = 8
+    lora_rank_vision_encoder : int = 2
 
     # only vision as input 
     only_vision : bool = False

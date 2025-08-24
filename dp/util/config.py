@@ -269,7 +269,7 @@ _CONFIGS = [
         ),
 
         shared_cfg=SharedConfig(
-            batch_size=128,
+            batch_size=64,
             num_pred_steps=40,
             num_cameras=3,
             camera_keys = ["left_camera-images-rgb", "right_camera-images-rgb", "top_camera-images-rgb"]

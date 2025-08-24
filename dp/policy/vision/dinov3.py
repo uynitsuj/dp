@@ -73,13 +73,13 @@ class AttnPoolHead(nn.Module):
         self,
         in_dim: int,
         out_dim: int = 512,
-        num_queries: int = 8,
-        num_heads: int = 8,
+        num_queries: int = 4,
+        num_heads: int = 4,
         ln_in: bool = True,
         ln_out: bool = False,
         mlp: bool = False,
         mlp_hidden: int | None = None,
-        dropout: float = 0.0,
+        dropout: float = 0.1,
     ):
         super().__init__()
         self.in_dim = in_dim
@@ -273,7 +273,7 @@ class Dinov3ImageBranch(nn.Module):
                 feat = self.backbone(x)
         else:
             feat = self.backbone(x)
-            
+
         return self.pool(feat)
 
     # def forward(self, x: torch.Tensor) -> torch.Tensor:
