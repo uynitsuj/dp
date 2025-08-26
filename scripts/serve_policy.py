@@ -83,8 +83,8 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s:%(na
 @dataclass
 class ServerConfig:
     # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/resnet-intergripper-proprio-29D_20250823_152419"
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_scaleDP_20250821_205127"
-    ckpt_id: int = 80
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/us01_tabletop_soupcan_intergripper_29D_dinov3_scaleDP_torch_sdpa_20250824_160641"
+    ckpt_id: int = 110
     host: str = "0.0.0.0"
     port: int = 8111
     device: str = "cuda"  # "cuda" | "cpu" | "cuda:0" ...

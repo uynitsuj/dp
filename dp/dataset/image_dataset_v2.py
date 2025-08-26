@@ -209,12 +209,21 @@ class SequenceDataset(Dataset):
             action_shape = action_stats["shape"]
             min_action = np.array(action_stats["min_action"]).reshape(action_shape)
             max_action = np.array(action_stats["max_action"]).reshape(action_shape)
+            min_proprio = np.array(action_stats["min_proprio"]).reshape(action_shape)
+            max_proprio = np.array(action_stats["max_proprio"]).reshape(action_shape)
+            mean_action = np.array(action_stats["mean_action"]).reshape(action_shape)
+            mean_proprio = np.array(action_stats["mean_proprio"]).reshape(action_shape)
         else:
             output_dir = logging_config.output_dir
-            min_action, max_action = self.calculate_dataset_statistics(os.path.join(output_dir, "action_statistics.json"))
+            min_action, max_action, min_proprio, max_proprio, mean_action, mean_proprio = self.calculate_dataset_statistics(os.path.join(output_dir, "action_statistics.json"))
+        
         self.stats = {
             "min" : torch.from_numpy(min_action), 
             "max" : torch.from_numpy(max_action),
+        }
+        self.stats_proprio = {
+            "min" : torch.from_numpy(min_proprio), 
+            "max" : torch.from_numpy(max_proprio),
         }
 
         # randomly shuffle the file2length dataset
@@ -260,6 +269,7 @@ class SequenceDataset(Dataset):
             self.vision_aug = False
 
         self.enable_scale_action = dataset_config.scale_action
+        self.enable_scale_proprio = dataset_config.scale_proprio
 
 
     def calculate_dataset_statistics(
@@ -268,6 +278,7 @@ class SequenceDataset(Dataset):
     ):
         # calculate the min and max of delta actions for left and right arm 
         global_min_action, global_max_action = None, None
+        global_min_proprio, global_max_proprio = None, None
         good_files = []
         for file in tqdm(self.common_path):
             action, proprio = self.helper_load_episode_data(file, self.traj_start_idx, self.get_traj_length(file) - self.subsample_steps)
@@ -288,13 +299,23 @@ class SequenceDataset(Dataset):
             good_files.append(file)
 
             min_action, max_action = action.min((0,1)), action.max((0,1)) # only calculate on the action dim TODO: also try per-timestep dim normalization
+            min_proprio, max_proprio = proprio.min((0)), proprio.max((0))
             mean_action = action.mean((0,1))
+            mean_proprio = proprio.mean((0))
+
             if global_min_action is None:
                 global_min_action = min_action
                 global_max_action = max_action
             else:
                 global_min_action = np.stack([global_min_action, min_action], axis=0).min(0)
                 global_max_action = np.stack([global_max_action, max_action], axis=0).max(0)    
+
+            if global_min_proprio is None:
+                global_min_proprio = min_proprio
+                global_max_proprio = max_proprio
+            else:
+                global_min_proprio = np.stack([global_min_proprio, min_proprio], axis=0).min(0)
+                global_max_proprio = np.stack([global_max_proprio, max_proprio], axis=0).max(0)
         
         self.common_path = good_files
         
@@ -310,17 +331,21 @@ class SequenceDataset(Dataset):
         # else:
         #     self.scale_right_gripper = 1
         # save the statistics 
+
         stats = {
             "shape" : global_min_action.shape,
             "min_action": global_min_action.flatten().tolist(),
             "max_action": global_max_action.flatten().tolist(),
             "mean_action": mean_action.flatten().tolist(),
+            "min_proprio": global_min_proprio.flatten().tolist(),
+            "max_proprio": global_max_proprio.flatten().tolist(),
+            "mean_proprio": mean_proprio.flatten().tolist(),
         }
+
         with open(output_path, 'w') as f:
             json.dump(stats, f)
         print("Action statistics saved to ", output_path)
-        return global_min_action, global_max_action
-        
+        return global_min_action, global_max_action, global_min_proprio, global_max_proprio, mean_action, mean_proprio
 
     def __len__(self):
         return self.total_length
@@ -398,7 +423,9 @@ class SequenceDataset(Dataset):
         # option for not scaling 
         if self.enable_scale_action:
             actions = scale_action(action, self.stats, type="diffusion") 
-
+        
+        if self.enable_scale_proprio:
+            proprio = scale_action(proprio, self.stats_proprio, type="diffusion") 
         # remove nans 
         if np.isnan(action).any():
             print("Warning: Num. NaNs in action: ", np.isnan(action).sum())

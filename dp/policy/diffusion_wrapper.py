@@ -10,7 +10,7 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from transformers import AutoProcessor
 
 from dp.dataset.utils import default_vision_transform as transforms_noaug_train  # scale to 224 224 first 
-from dp.dataset.utils import unscale_action
+from dp.dataset.utils import unscale_action, scale_action
 from dp.policy.model import DiffusionPolicy, Dinov2DiscretePolicy, SimplePolicy
 from dp.util.config import TrainConfig
 from dataclasses import replace
@@ -57,9 +57,17 @@ class DiffusionWrapper():
         action_shape = action_stats["shape"]
         min_action = np.array(action_stats["min_action"]).reshape(action_shape)
         max_action = np.array(action_stats["max_action"]).reshape(action_shape)
+        min_proprio = np.array(action_stats["min_proprio"]).reshape(action_shape)
+        max_proprio = np.array(action_stats["max_proprio"]).reshape(action_shape)
+        mean_action = np.array(action_stats["mean_action"]).reshape(action_shape)
+        mean_proprio = np.array(action_stats["mean_proprio"]).reshape(action_shape)
         self.stats = {
             "min" : torch.from_numpy(min_action),
             "max" : torch.from_numpy(max_action),
+        }
+        self.stats_proprio = {
+            "min" : torch.from_numpy(min_proprio), 
+            "max" : torch.from_numpy(max_proprio),
         }
         
         args : TrainConfig = yaml.load(Path(train_yaml_path).read_text(), Loader=yaml.Loader)
@@ -252,6 +260,7 @@ class DiffusionWrapper():
                   SDPBackend.EFFICIENT_ATTENTION,
                   SDPBackend.MATH]), \
                 torch.inference_mode():
+            nbatch["proprio"] = scale_action(nbatch["proprio"], stat=self.stats_proprio, type='diffusion')
 
             t0 = time.time()
             naction = self.model.forward_inference(nbatch, self.vision_transform)
@@ -260,6 +269,8 @@ class DiffusionWrapper():
 
             if denormalize:
                 naction = unscale_action(naction, stat=self.stats, type='diffusion')
+                nbatch["proprio"] = unscale_action(nbatch["proprio"], stat=self.stats_proprio, type='diffusion')
+                
             if self.data_transforms is not None:
                 data_dict = {
                     "action": naction,

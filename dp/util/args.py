@@ -21,6 +21,9 @@ class DatasetConfig:
     # scale action by statistics 
     scale_action : bool = True
 
+    # scale proprio by statistics 
+    scale_proprio : bool = True
+
     # Dataset config path 
     dataset_json : Optional[str] = None
 

@@ -165,9 +165,9 @@ class InferenceConfig:
     # path to model checkpoint
     # model_ckpt_folder: str = "/nfs_us/justinyu/dp/absolute_test_20250821_142116"
     # model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/resnet-intergripper-proprio-29D_20250823_152419"
-    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/intergripper_proprio_scaleDP_20250821_205127"
+    model_ckpt_folder: str = "/home/justinyu/nfs_us/justinyu/dp/us01_tabletop_soupcan_intergripper_29D_siglip_scaleDP_torch_sdpa_20250825_164443"
     # ckpt_id : int = 0
-    ckpt_id : int = 199
+    ckpt_id : int = 0
 
 def main(inference_config: InferenceConfig):
     # parsing args 
