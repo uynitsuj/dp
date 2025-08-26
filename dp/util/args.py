@@ -71,10 +71,10 @@ class PolicyConfig:
     timm_vision_encoder : Optional[str] = None  # "vit_base_patch14_dinov2.lvd142m"
 
     # use other vision encoder 
-    vision_encoder_pretrained_type : Optional[str] = "dinov3" # options: "dinov3"
+    vision_encoder_pretrained_type : Optional[str] = "siglipSo400" # options: "dinov3", "siglipSo400"
 
     # lora vision encoder 
-    lora_rank_vision_encoder : int = 2
+    lora_rank_vision_encoder : int = 8
 
     # only vision as input 
     only_vision : bool = False

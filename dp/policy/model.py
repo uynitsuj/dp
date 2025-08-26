@@ -16,6 +16,7 @@ from dp.policy.scale_transformer_diffusion import ScaleTransformerDiffusionPolic
 from dp.policy.utils import ConditionalUnet1D
 from dp.util.args import ModelConfig, SharedConfig
 from dp.policy.vision.dinov3 import Dinov3ImageBranch
+from dp.policy.vision.siglip import SigLIPImageBranch
 
 def count_parameters(model, trainable_only=False):
     if trainable_only:
@@ -590,6 +591,26 @@ class DiffusionPolicy(nn.Module):
                 # import pdb; pdb.set_trace()
 
                 self.vision_encoder.backbone = get_peft_model(self.vision_encoder.backbone, lora_config)
+        elif self.vision_encoder_pretrained_type == "siglipSo400":
+            self.vision_encoder = SigLIPImageBranch(
+                model_name="google/siglip-base-patch16-224",
+                crop_size=(200, 200),
+                target_size=(224, 224),
+                num_kp=32,
+                freeze_backbone=True, # freeze backbone
+                eval_fixed_crop=False,
+                normalize_images=False,
+            )
+            if self.lora_rank_vision_encoder > 0:
+                # lora the vision encoder 
+                lora_config = LoraConfig(
+                    r=self.lora_rank_vision_encoder,
+                    lora_alpha=self.lora_rank_vision_encoder,
+                    target_modules=["q_proj", "v_proj", "out_proj"] #, "up_proj", "down_proj"]
+                )
+                self.vision_encoder.backbone = get_peft_model(self.vision_encoder.backbone, lora_config)
+
+                self.vision_encoder.backbone = replace_bn_with_gn(self.vision_encoder.backbone)
         else:
             # fallback toconstruct ResNet18 encoder
             # if you have multiple camera views, use seperate encoder weights for each view.
