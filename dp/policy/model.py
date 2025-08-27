@@ -523,8 +523,8 @@ class SimplePolicy(nn.Module):
         return nimage, nagent_pos, batch_size
 
 class DiffusionPolicy(nn.Module):
-    action_dim = 29
-    lowdim_obs_dim = 29
+    action_dim = 7
+    lowdim_obs_dim = 7
     vision_feature_dim = 512
 
     def __init__(

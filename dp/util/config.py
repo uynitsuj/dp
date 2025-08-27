@@ -133,7 +133,9 @@ class LeRobotUR5DatasetConfig(LeRobotDatasetConfigFactory):
     """
     This config is used to configure transforms for the YAM bimanual robot dataset.
     The YAM data can use absolute joint positions or absolute cartesian positions:
-    - State format: [6_joints, 1D_gripper] = 7D
+    - State format: 
+    joint: [6_joints, 1D_gripper] = 7D
+    cartesian: [6D_rot, 3D_pos, 1D_gripper] = 10D
     - Camera views: left exterior, right exterior, and top
     - Actions are absolute joint positions or absolute cartesian positions
     """
@@ -148,13 +150,13 @@ class LeRobotUR5DatasetConfig(LeRobotDatasetConfigFactory):
         # model_transforms = ModelTransformFactory(default_prompt=self.default_prompt)(model_config)
 
         if self.action_space == "joint":
-            robot_action_dim = 14
+            robot_action_dim = 7
         elif self.action_space == "cartesian":
-            robot_action_dim = 20
+            robot_action_dim = 10
         else:
             raise ValueError(f"Invalid action space: {self.action_space}")
 
-        # Data transforms using YAM policy transforms
+        # Data transforms using policy transforms
         data_transforms = _transforms.Group()
 
         # We return all data transforms for training and inference. No need to change anything here.
