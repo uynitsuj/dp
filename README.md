@@ -47,7 +47,7 @@ uv run scripts/inference.py
 You should see plots comparing ground truth trajectory data from the train dataset and action chunks predicted by the diffusion policy ![pred](media/pred_vs_gt_0.png)
 
 ## Deploying the Policy
-To deploy the policy, you can either instantiate the DiffusionWrapper class directly, or use `scripts/serve_policy.py` to remotely serve (on another workstation connected to the same local network)
+To deploy the policy, you can either instantiate the DiffusionWrapper class directly, or use `scripts/serve_policy.py` to remotely serve (on another workstation connected to the same local network, or the same workstation with IPs set to localhost)
 
 In `scripts/serve_policy.py` modify 
 ``` python
