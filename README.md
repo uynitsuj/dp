@@ -24,9 +24,9 @@ To fine-tune a model on your own data, you need to define configs for data proce
 
 Dataset normalization statistics are computed and applied to data automatically prior to training.
 
-We run training with the command:
+We can run training on the example provided dp_ur5 config with the command:
 ```bash
-uv run scripts/train.py dp_xmi_rby --exp-name=my_experiment
+uv run scripts/train.py dp_ur5 --exp-name=my_experiment
 ```
 
 ## Post train sanity check -- Evaluate a policy on a dataset
