@@ -16,7 +16,7 @@ uv venv --python 3.11
 source .venv/bin/activate
 uv sync
 uv pip install -e .
-uv pip install submodules/transformers[torch] # Requires transformers nightly for dinov3 ViT
+uv pip install submodules/transformers[torch] # Requires transformers nightly if using dinov3 ViT
 ```
 
 ## Defining training configs and running training
