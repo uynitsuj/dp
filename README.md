@@ -116,7 +116,7 @@ and will call inference with
 ``` python
 self._websocket_client_policy.infer(current_obs)
 ```
-with current_obs being a correctly constructed dictionary containing valid priprio and image observations (expected keys look like "state", "cam_key_1", "cam_key_2", etc.). 
+with current_obs being a correctly constructed dictionary containing valid proprio and image observations (expected keys look like "state", "cam_key_1", "cam_key_2", etc.). 
 
 ## Linting
 If contributing, please use ruff (automatically installed) for linting (https://docs.astral.sh/ruff/tutorial/#getting-started)
