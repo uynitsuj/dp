@@ -30,8 +30,6 @@ uv run scripts/train.py dp_xmi_rby --exp-name=my_experiment
 ```
 
 ## Post train sanity check -- Evaluate a policy on a dataset
-We run training with the command:
-
 In `scripts/inference.py` modify paths:
 
 ```python
