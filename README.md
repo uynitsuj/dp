@@ -131,5 +131,5 @@ ruff format # code format
 - [x] Make DataConfig a ConfigFactory so that it's more extensible to different data formats
 - [x] Make lerobot datasets an acceptable input dataset format (no need to write a new dataloader, just convert and cache data mp4->jpg and paraquet->hdf5 prior to train)
 - [x] Add DINOv3 ViT option for Diffusion Policy
-- [ ] Develop remote inference wrapper
+- [x] Develop remote inference wrapper
 - [ ] Currently dataloader is hardcoded for single timestep obs, fix this lol
