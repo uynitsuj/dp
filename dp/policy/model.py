@@ -992,25 +992,25 @@ class DiffusionPolicy(nn.Module):
             Predicted actions of shape (B, action_horizon, action_dim)
         """
         # Process batch
-        import time
-        t0 = time.perf_counter()
+        # import time
+        # t0 = time.perf_counter()
         nimage, nagent_pos, B = self._process_batch(nbatch, vision_transform)
-        t1 = time.perf_counter()
-        print("process_batch time", t1 - t0)
+        # t1 = time.perf_counter()
+        # print("process_batch time", t1 - t0)
         
-        t0 = time.perf_counter()
+        # t0 = time.perf_counter()
         # Get observation features
         obs_features = self._get_observation_features(nimage, nagent_pos)
-        t1 = time.perf_counter()
-        print("get_observation_features time", t1 - t0)
+        # t1 = time.perf_counter()
+        # print("get_observation_features time", t1 - t0)
         
-        t0 = time.perf_counter()
+        # t0 = time.perf_counter()
         # For transformer, we need to pass the observation features directly
         obs_cond = obs_features.flatten(start_dim=1)
-        t1 = time.perf_counter()
-        print("flatten obs_features time", t1 - t0)
+        # t1 = time.perf_counter()
+        # print("flatten obs_features time", t1 - t0)
         
-        t0 = time.perf_counter()
+        # t0 = time.perf_counter()
         # Initialize with random noise
         if self.diffusion_model_type == "unet":
             # For UNet, we need to reshape to (B, T, D)
@@ -1041,10 +1041,10 @@ class DiffusionPolicy(nn.Module):
             # Denoise step by step
             for t in self.noise_scheduler.timesteps:
                 # Predict noise residual
-                t0 = time.perf_counter()
+                # t0 = time.perf_counter()
                 noise_pred = self.noise_pred_net(noisy_actions, t, cond=obs_features)
-                t1 = time.perf_counter()
-                print("one step noise_pred time", t1 - t0)
+                # t1 = time.perf_counter()
+                # print("one step noise_pred time", t1 - t0)
                 # Compute previous noisy sample x_t -> x_t-1
                 noisy_actions = self.noise_scheduler.step(
                     noise_pred, t, noisy_actions
@@ -1052,9 +1052,9 @@ class DiffusionPolicy(nn.Module):
             
             # Final prediction
             pred_action = noisy_actions
-        t1 = time.perf_counter()
-        print("denoise time", t1 - t0)
-        print(len(self.noise_scheduler.timesteps))
+        # t1 = time.perf_counter()
+        # print("denoise time", t1 - t0)
+        # print(len(self.noise_scheduler.timesteps))
 
         return pred_action
 

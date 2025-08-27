@@ -262,10 +262,10 @@ class DiffusionWrapper():
                 torch.inference_mode():
             nbatch["proprio"] = scale_action(nbatch["proprio"], stat=self.stats_proprio, type='diffusion')
 
-            t0 = time.time()
+            # t0 = time.time()
             naction = self.model.forward_inference(nbatch, self.vision_transform)
-            t1 = time.time()
-            print("forward_inference time", t1 - t0)
+            # t1 = time.time()
+            # print("forward_inference time", t1 - t0)
 
             if denormalize:
                 naction = unscale_action(naction, stat=self.stats, type='diffusion')

@@ -315,6 +315,29 @@ _CONFIGS = [
             output_dir="/nfs_us/justinyu/dp",
         ),
     ),
+    TrainConfig(
+        name="dp_ur5",
+
+        dataset_cfg=LeRobotUR5DatasetConfig(
+            repo_id="uynitsuj/ur5_data_20250827_example",
+            default_prompt="pick up the soup can and place it in the bin",
+
+            action_space="joint",
+        ),
+
+        shared_cfg=SharedConfig(
+            batch_size=128,
+            num_pred_steps=40,
+            num_cameras=3,
+            camera_keys = ["left_camera-images-rgb", "right_camera-images-rgb", "top_camera-images-rgb"] # These should be the same keys that appear in your lerobot dataset
+        ),
+        trainer_cfg=TrainerConfig(
+            epochs=200,
+        ),
+        logging_cfg=LoggingConfig(
+            output_dir=".",
+        ),
+    ),
 ]
 
 if len({config.name for config in _CONFIGS}) != len(_CONFIGS):

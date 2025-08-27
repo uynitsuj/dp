@@ -155,21 +155,11 @@ def repack_obs(obs: Dict[str, Any], camera_keys: Optional[List[str]] = None) -> 
     if camera_keys is not None:
         for key in camera_keys:
             assert key in obs, f"Camera key {key} not found in obs"
-            # if the range of image values is 0-255, convert to 0-1
-            # if obs[key].max() <= 1.0:
-            #     observation.append(obs[key])
-            # else:
-            #     observation.append(obs[key] / 255.0) # Assumption: if image max value is gt 1, then it's likely in [0, 255]
             observation.append(obs[key])
 
     else:
         for key in obs:
             if "images" in key:
-                # if the range of image values is 0-255, convert to 0-1
-                # if obs[key].max() <= 1.0:
-                #     observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
-                # else:
-                #     observation.append(obs[key] / 255.0)
                 observation.append(obs[key]) # Assumes the order of obs dict respects the order that the model was trained on
 
 
@@ -227,31 +217,13 @@ class _DiffusionWrapperAdapter:
                     if nbatch[key].shape[0] != 1:
                         raise ValueError(f"Expected batch size 1 for key '{key}', got {nbatch[key].shape}")
 
-            # Forward pass (return_tokens=True -> for discrete decode path parity)
-            # The user's example calls `inferencer(nbatch, True)`; we mimic that.
-            # import pdb; pdb.set_trace()
-            
-            '''
-            self._infer.model.__dir__()
-            ['T_destination', '__annotations__', '__call__', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattr__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', 
-            '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_apply', '_backward_hooks', '_backward_pre_hooks', '_buffers', 
-            '_call_impl', '_compiled_call_impl', '_forward_hooks', '_forward_hooks_always_called', '_forward_hooks_with_kwargs', '_forward_pre_hooks', '_forward_pre_hooks_with_kwargs', '_get_backward_hooks', '_get_backward_pre_hooks', '_get_name', 
-            '_get_observation_features', '_get_vision_features', '_is_full_backward_hook', '_load_from_state_dict', '_load_state_dict_post_hooks', '_load_state_dict_pre_hooks', '_maybe_warn_non_full_backward_hook', '_modules', '_named_members', 
-            '_non_persistent_buffers_set', '_parameters', '_process_batch', '_process_images', '_register_load_state_dict_pre_hook', '_register_state_dict_hook', '_replicate_for_data_parallel', '_save_to_state_dict', '_slow_forward', '_state_dict_hooks', 
-            '_state_dict_pre_hooks', '_version', '_wrapped_call_impl', 'action_dim', 'action_horizon', 'add_module', 'apply', 'bfloat16', 'buffers', 'call_super_init', 'children', 'compile', 'cpu', 'cuda', 'diffusion_model_type', 'double', 'dump_patches', 
-            'eval', 'extra_repr', 'float', 'forward', 'forward_inference', 'forward_loss', 'get_buffer', 'get_extra_state', 'get_parameter', 'get_submodule', 'global_cond_dim', 'gripper_loss_w', 'half', 'ipu', 'load_state_dict', 'lora_rank_vision_encoder', 
-            'lowdim_obs_dim', 'modules', 'mtia', 'named_buffers', 'named_children', 'named_modules', 'named_parameters', 'noise_pred_net', 'noise_scheduler', 'num_cameras', 'num_diffusion_iters', 'obs_horizon', 'only_vision', 'parameters', 'pred_left_only', 
-            'pred_right_only', 'prediction_type', 'register_backward_hook', 'register_buffer', 'register_forward_hook', 'register_forward_pre_hook', 'register_full_backward_hook', 'register_full_backward_pre_hook', 'register_load_state_dict_post_hook', 
-            'register_load_state_dict_pre_hook', 'register_module', 'register_parameter', 'register_state_dict_post_hook', 'register_state_dict_pre_hook', 'requires_grad_', 's2', 'set_extra_state', 'set_submodule', 'share_memory', 'smart_apply', 'state_dict', 
-            'timm_vision_encoder', 'to', 'to_empty', 'train', 'training', 'type', 'vision_encoder', 'vision_encoder_pretrained_type', 'vision_feature_dim', 'xpu', 'zero_grad']
-            '''
             camera_keys = None
             if hasattr(self._infer.model, "camera_keys"):
                 camera_keys = self._infer.model.camera_keys
             nbatch = repack_obs(nbatch, camera_keys = camera_keys)
             vision_transform = transforms_noaug_train(resolution=224) # TODO: remove hardcode everywhere eventually and take this from cfg
-            # import pdb; pdb.set_trace()
-            nbatch["observation"] = vision_transform(nbatch["observation"]/255.0)
+
+            nbatch["observation"] = vision_transform(nbatch["observation"]/255.0) # Assumes the image starts in int [0, 255]
             pred_action = self._infer(nbatch)
 
             # Decode or pass-through depending on model type
@@ -286,22 +258,6 @@ class _DiffusionWrapperAdapter:
                 # Continuous policies typically output (B,H,D) scaled to training space.
                 actions = pred_action
 
-            # Unscale to environment units (matches example)
-            # import pdb; pdb.set_trace()
-            # actions = unscale_action(actions, stat=self._stats, type='diffusion')  # (B,H,D)
-
-            # if self._infer.data_transforms is not None:
-            #     data_dict = {
-            #         "action": actions,
-            #         "proprio": nbatch["proprio"],
-            #     }
-            #     for tf_fn in self._infer.data_transforms.outputs:
-            #         data_dict = tf_fn(data_dict)
-            #     actions = data_dict["action"]
-
-            # nbatch["actions"] = actions
-
-            # actions_np = actions.detach().to('cpu').numpy()
             actions_np = actions[0]  # strip batch -> (H,D)
 
             return {"actions": actions_np}
